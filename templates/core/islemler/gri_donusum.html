@@ -1,0 +1,24 @@
+{% extends 'core/islemler/islem_base.html' %}
+
+{% block title %}Gri Dönüşüm - Görüntü İşleme{% endblock %}
+
+{% block islem_title %}Gri Dönüşüm{% endblock %}
+
+{% block islem_parametreleri %}
+<div class="mb-3">
+    <label class="form-label">Dönüşüm Yöntemi</label>
+    <select class="form-select" id="donusumYontemi">
+        <option value="ortalama">Ortalama Yöntemi</option>
+        <option value="agirlikli">Ağırlıklı Ortalama</option>
+        <option value="luminosity">Luminosity Yöntemi</option>
+    </select>
+</div>
+{% endblock %}
+
+{% block islem_js %}
+document.getElementById('processButton').addEventListener('click', function() {
+    // İşlem başlatma kodları buraya gelecek
+    console.log('Gri dönüşüm işlemi başlatıldı');
+    console.log('Seçilen yöntem:', document.getElementById('donusumYontemi').value);
+});
+{% endblock %} 

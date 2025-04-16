@@ -1,0 +1,44 @@
+{% extends 'core/islemler/islem_base.html' %}
+
+{% block title %}Görüntü Döndürme - Görüntü İşleme{% endblock %}
+
+{% block islem_title %}Görüntü Döndürme{% endblock %}
+
+{% block islem_parametreleri %}
+<div class="mb-3">
+    <label class="form-label">Döndürme Açısı</label>
+    <input type="range" class="form-range" id="dondurmeAcisi" min="-180" max="180" value="0">
+    <div class="text-center">
+        <span id="aciDegeri">0</span>°
+    </div>
+</div>
+<div class="mb-3">
+    <label class="form-label">İnterpolasyon Yöntemi</label>
+    <select class="form-select" id="interpolasyonYontemi">
+        <option value="bilinear">Bilinear</option>
+        <option value="nearest">En Yakın Komşu</option>
+        <option value="bicubic">Bikübik</option>
+    </select>
+</div>
+<div class="mb-3">
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="boyutKoru">
+        <label class="form-check-label" for="boyutKoru">
+            Orijinal Boyutu Koru
+        </label>
+    </div>
+</div>
+{% endblock %}
+
+{% block islem_js %}
+document.getElementById('dondurmeAcisi').addEventListener('input', function() {
+    document.getElementById('aciDegeri').textContent = this.value;
+});
+
+document.getElementById('processButton').addEventListener('click', function() {
+    console.log('Görüntü döndürme işlemi başlatıldı');
+    console.log('Döndürme açısı:', document.getElementById('dondurmeAcisi').value);
+    console.log('İnterpolasyon yöntemi:', document.getElementById('interpolasyonYontemi').value);
+    console.log('Boyut korunacak:', document.getElementById('boyutKoru').checked);
+});
+{% endblock %} 

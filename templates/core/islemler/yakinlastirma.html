@@ -1,0 +1,45 @@
+{% extends 'core/islemler/islem_base.html' %}
+
+{% block title %}Yakınlaştırma/Uzaklaştırma - Görüntü İşleme{% endblock %}
+
+{% block islem_title %}Yakınlaştırma/Uzaklaştırma{% endblock %}
+
+{% block islem_parametreleri %}
+<div class="mb-3">
+    <label class="form-label">Ölçek Faktörü</label>
+    <input type="range" class="form-range" id="olcekFaktoru" min="10" max="400" value="100" step="10">
+    <div class="text-center">
+        <span id="olcekDegeri">100</span>%
+    </div>
+</div>
+<div class="mb-3">
+    <label class="form-label">İnterpolasyon Yöntemi</label>
+    <select class="form-select" id="interpolasyonYontemi">
+        <option value="bilinear">Bilinear</option>
+        <option value="nearest">En Yakın Komşu</option>
+        <option value="bicubic">Bikübik</option>
+        <option value="lanczos">Lanczos</option>
+    </select>
+</div>
+<div class="mb-3">
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="antiAliasing">
+        <label class="form-check-label" for="antiAliasing">
+            Anti-aliasing Uygula
+        </label>
+    </div>
+</div>
+{% endblock %}
+
+{% block islem_js %}
+document.getElementById('olcekFaktoru').addEventListener('input', function() {
+    document.getElementById('olcekDegeri').textContent = this.value;
+});
+
+document.getElementById('processButton').addEventListener('click', function() {
+    console.log('Yakınlaştırma/Uzaklaştırma işlemi başlatıldı');
+    console.log('Ölçek faktörü:', document.getElementById('olcekFaktoru').value + '%');
+    console.log('İnterpolasyon yöntemi:', document.getElementById('interpolasyonYontemi').value);
+    console.log('Anti-aliasing:', document.getElementById('antiAliasing').checked);
+});
+{% endblock %} 

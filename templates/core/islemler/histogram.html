@@ -1,0 +1,56 @@
+{% extends 'core/islemler/islem_base.html' %}
+
+{% block title %}Histogram İşlemleri - Görüntü İşleme{% endblock %}
+
+{% block islem_title %}Histogram İşlemleri{% endblock %}
+
+{% block islem_parametreleri %}
+<div class="mb-3">
+    <label class="form-label">İşlem Türü</label>
+    <select class="form-select" id="islemTuru">
+        <option value="esitleme">Histogram Eşitleme</option>
+        <option value="germe">Histogram Germe</option>
+        <option value="belirginlestirme">Histogram Belirginleştirme</option>
+    </select>
+</div>
+<div class="mb-3" id="germeParametreleri" style="display: none;">
+    <label class="form-label">Germe Parametreleri</label>
+    <div class="row g-2">
+        <div class="col-6">
+            <label class="form-label small">Min Değer</label>
+            <input type="number" class="form-control" id="minDeger" min="0" max="255" value="0">
+        </div>
+        <div class="col-6">
+            <label class="form-label small">Max Değer</label>
+            <input type="number" class="form-control" id="maxDeger" min="0" max="255" value="255">
+        </div>
+    </div>
+</div>
+<div class="mb-3">
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="kanalBazli">
+        <label class="form-check-label" for="kanalBazli">
+            Renk Kanallarını Ayrı İşle
+        </label>
+    </div>
+</div>
+{% endblock %}
+
+{% block islem_js %}
+document.getElementById('islemTuru').addEventListener('change', function() {
+    const germeParametreleri = document.getElementById('germeParametreleri');
+    germeParametreleri.style.display = this.value === 'germe' ? 'block' : 'none';
+});
+
+document.getElementById('processButton').addEventListener('click', function() {
+    console.log('Histogram işlemi başlatıldı');
+    console.log('İşlem türü:', document.getElementById('islemTuru').value);
+    
+    if (document.getElementById('islemTuru').value === 'germe') {
+        console.log('Min değer:', document.getElementById('minDeger').value);
+        console.log('Max değer:', document.getElementById('maxDeger').value);
+    }
+    
+    console.log('Kanal bazlı işlem:', document.getElementById('kanalBazli').checked);
+});
+{% endblock %} 

@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+
+{% block title %}Ana Sayfa - Görüntü İşleme{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Hero Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary text-white shadow">
+                <div class="card-body p-5 text-center">
+                    <h1 class="display-4 mb-4">Görüntü İşleme Platformu</h1>
+                    <p class="lead mb-4">
+                        Görüntüleriniz üzerinde gelişmiş işlemler yapabileceğiniz, 
+                        kullanıcı dostu ve modern bir platform.
+                    </p>
+                    <a href="{% url 'core:gri_donusum' %}" class="btn btn-light btn-lg">
+                        <i class="bi bi-image me-2"></i>Hemen Başla
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="h3 mb-4">Özellikler</h2>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow">
+                <div class="card-body text-center">
+                    <i class="bi bi-image display-4 text-primary mb-3"></i>
+                    <h5 class="card-title">Temel İşlemler</h5>
+                    <p class="card-text">
+                        Gri tonlama, binary dönüşüm, görüntü döndürme ve kırpma gibi 
+                        temel görüntü işleme operasyonları.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow">
+                <div class="card-body text-center">
+                    <i class="bi bi-sliders display-4 text-success mb-3"></i>
+                    <h5 class="card-title">Gelişmiş Özellikler</h5>
+                    <p class="card-text">
+                        Histogram analizi, kontrast ayarlama, kenar bulma ve 
+                        morfolojik işlemler gibi gelişmiş özellikler.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow">
+                <div class="card-body text-center">
+                    <i class="bi bi-gear display-4 text-info mb-3"></i>
+                    <h5 class="card-title">Özelleştirilebilir</h5>
+                    <p class="card-text">
+                        Her işlem için özelleştirilebilir parametreler ve 
+                        ayarlanabilir seçenekler.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- How It Works -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="h3 mb-4">Nasıl Çalışır?</h2>
+            <div class="card shadow">
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3 mb-4 mb-md-0">
+                            <div class="rounded-circle bg-light p-4 mx-auto mb-3" style="width: 100px; height: 100px;">
+                                <i class="bi bi-upload text-primary display-6"></i>
+                            </div>
+                            <h5>1. Görüntü Yükle</h5>
+                            <p class="text-muted">Görüntünüzü platforma yükleyin</p>
+                        </div>
+                        <div class="col-md-3 mb-4 mb-md-0">
+                            <div class="rounded-circle bg-light p-4 mx-auto mb-3" style="width: 100px; height: 100px;">
+                                <i class="bi bi-list-check text-primary display-6"></i>
+                            </div>
+                            <h5>2. İşlem Seç</h5>
+                            <p class="text-muted">Yapmak istediğiniz işlemi seçin</p>
+                        </div>
+                        <div class="col-md-3 mb-4 mb-md-0">
+                            <div class="rounded-circle bg-light p-4 mx-auto mb-3" style="width: 100px; height: 100px;">
+                                <i class="bi bi-sliders text-primary display-6"></i>
+                            </div>
+                            <h5>3. Parametreleri Ayarla</h5>
+                            <p class="text-muted">İşlem parametrelerini özelleştirin</p>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="rounded-circle bg-light p-4 mx-auto mb-3" style="width: 100px; height: 100px;">
+                                <i class="bi bi-check-circle text-primary display-6"></i>
+                            </div>
+                            <h5>4. İşlemi Başlat</h5>
+                            <p class="text-muted">Sonucu anında görüntüleyin</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Available Operations -->
+    <div class="row">
+        <div class="col-12">
+            <h2 class="h3 mb-4">Kullanılabilir İşlemler</h2>
+            <div class="card shadow">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <h6><i class="bi bi-image text-primary me-2"></i>Gri Dönüşüm</h6>
+                            <p class="text-muted small">Renkli görüntüyü gri tonlamalı hale getirir</p>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <h6><i class="bi bi-circle-half text-primary me-2"></i>Binary Dönüşüm</h6>
+                            <p class="text-muted small">Görüntüyü siyah-beyaz formata dönüştürür</p>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <h6><i class="bi bi-arrow-clockwise text-primary me-2"></i>Görüntü Döndürme</h6>
+                            <p class="text-muted small">Görüntüyü istenen açıda döndürür</p>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <h6><i class="bi bi-crop text-primary me-2"></i>Görüntü Kırpma</h6>
+                            <p class="text-muted small">Görüntünün istenilen bölgesini keser</p>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <h6><i class="bi bi-zoom-in text-primary me-2"></i>Yakınlaştırma</h6>
+                            <p class="text-muted small">Görüntüyü yakınlaştırır veya uzaklaştırır</p>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <h6><i class="bi bi-bar-chart text-primary me-2"></i>Histogram</h6>
+                            <p class="text-muted small">Görüntünün histogram analizini yapar</p>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <h6><i class="bi bi-brightness-high text-primary me-2"></i>Kontrast</h6>
+                            <p class="text-muted small">Görüntünün kontrastını ayarlar</p>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <h6><i class="bi bi-bounding-box text-primary me-2"></i>Kenar Bulma</h6>
+                            <p class="text-muted small">Görüntüdeki kenarları tespit eder</p>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <h6><i class="bi bi-snow text-primary me-2"></i>Gürültü İşlemleri</h6>
+                            <p class="text-muted small">Gürültü ekleme ve temizleme işlemleri</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

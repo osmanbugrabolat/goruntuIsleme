@@ -1,0 +1,100 @@
+{% extends 'core/islemler/islem_base.html' %}
+
+{% block title %}Filtreleme İşlemleri - Görüntü İşleme{% endblock %}
+
+{% block islem_title %}Filtreleme İşlemleri{% endblock %}
+
+{% block islem_parametreleri %}
+<div class="mb-3">
+    <label class="form-label">Filtre Türü</label>
+    <select class="form-select" id="filtreTuru">
+        <option value="mean">Ortalama Filtre</option>
+        <option value="gaussian">Gauss Filtresi</option>
+        <option value="median">Medyan Filtresi</option>
+        <option value="bilateral">İkili Filtre (Bilateral)</option>
+    </select>
+</div>
+
+<div class="mb-3">
+    <label class="form-label">Çekirdek Boyutu</label>
+    <div class="d-flex align-items-center gap-2">
+        <input type="range" class="form-range" id="cekirdekBoyutu" min="3" max="15" step="2" value="3">
+        <span id="cekirdekBoyutuDeger">3x3</span>
+    </div>
+</div>
+
+<div id="gaussParametreleri" class="mb-3" style="display: none;">
+    <label class="form-label">Sigma Değeri</label>
+    <div class="d-flex align-items-center gap-2">
+        <input type="range" class="form-range" id="sigma" min="0.1" max="5.0" step="0.1" value="1.0">
+        <span id="sigmaDeger">1.0</span>
+    </div>
+</div>
+
+<div id="bilateralParametreleri" class="mb-3" style="display: none;">
+    <div class="row">
+        <div class="col">
+            <label class="form-label">Sigma Renk</label>
+            <div class="d-flex align-items-center gap-2">
+                <input type="range" class="form-range" id="sigmaRenk" min="10" max="150" step="5" value="75">
+                <span id="sigmaRenkDeger">75</span>
+            </div>
+        </div>
+        <div class="col">
+            <label class="form-label">Sigma Uzay</label>
+            <div class="d-flex align-items-center gap-2">
+                <input type="range" class="form-range" id="sigmaUzay" min="10" max="150" step="5" value="75">
+                <span id="sigmaUzayDeger">75</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block islem_js %}
+const filtreTuru = document.getElementById('filtreTuru');
+const cekirdekBoyutu = document.getElementById('cekirdekBoyutu');
+const cekirdekBoyutuDeger = document.getElementById('cekirdekBoyutuDeger');
+const gaussParametreleri = document.getElementById('gaussParametreleri');
+const bilateralParametreleri = document.getElementById('bilateralParametreleri');
+const sigma = document.getElementById('sigma');
+const sigmaDeger = document.getElementById('sigmaDeger');
+const sigmaRenk = document.getElementById('sigmaRenk');
+const sigmaRenkDeger = document.getElementById('sigmaRenkDeger');
+const sigmaUzay = document.getElementById('sigmaUzay');
+const sigmaUzayDeger = document.getElementById('sigmaUzayDeger');
+
+filtreTuru.addEventListener('change', function() {
+    gaussParametreleri.style.display = this.value === 'gaussian' ? 'block' : 'none';
+    bilateralParametreleri.style.display = this.value === 'bilateral' ? 'block' : 'none';
+});
+
+cekirdekBoyutu.addEventListener('input', function() {
+    cekirdekBoyutuDeger.textContent = `${this.value}x${this.value}`;
+});
+
+sigma.addEventListener('input', function() {
+    sigmaDeger.textContent = this.value;
+});
+
+sigmaRenk.addEventListener('input', function() {
+    sigmaRenkDeger.textContent = this.value;
+});
+
+sigmaUzay.addEventListener('input', function() {
+    sigmaUzayDeger.textContent = this.value;
+});
+
+document.getElementById('processButton').addEventListener('click', function() {
+    console.log('Filtreleme işlemi başlatıldı');
+    console.log('Filtre türü:', filtreTuru.value);
+    console.log('Çekirdek boyutu:', cekirdekBoyutu.value);
+    
+    if (filtreTuru.value === 'gaussian') {
+        console.log('Sigma:', sigma.value);
+    } else if (filtreTuru.value === 'bilateral') {
+        console.log('Sigma Renk:', sigmaRenk.value);
+        console.log('Sigma Uzay:', sigmaUzay.value);
+    }
+});
+{% endblock %} 

@@ -1,0 +1,35 @@
+{% extends 'core/islemler/islem_base.html' %}
+
+{% block title %}Binary Dönüşüm - Görüntü İşleme{% endblock %}
+
+{% block islem_title %}Binary Dönüşüm{% endblock %}
+
+{% block islem_parametreleri %}
+<div class="mb-3">
+    <label class="form-label">Eşik Değeri</label>
+    <input type="range" class="form-range" id="esikDegeri" min="0" max="255" value="127">
+    <div class="text-center">
+        <span id="esikDegeriText">127</span>
+    </div>
+</div>
+<div class="mb-3">
+    <label class="form-label">Eşikleme Yöntemi</label>
+    <select class="form-select" id="esiklemeYontemi">
+        <option value="basit">Basit Eşikleme</option>
+        <option value="otsu">Otsu Eşikleme</option>
+        <option value="adaptif">Adaptif Eşikleme</option>
+    </select>
+</div>
+{% endblock %}
+
+{% block islem_js %}
+document.getElementById('esikDegeri').addEventListener('input', function() {
+    document.getElementById('esikDegeriText').textContent = this.value;
+});
+
+document.getElementById('processButton').addEventListener('click', function() {
+    console.log('Binary dönüşüm işlemi başlatıldı');
+    console.log('Eşik değeri:', document.getElementById('esikDegeri').value);
+    console.log('Seçilen yöntem:', document.getElementById('esiklemeYontemi').value);
+});
+{% endblock %} 

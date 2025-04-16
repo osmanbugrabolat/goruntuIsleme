@@ -1,0 +1,48 @@
+{% extends 'core/islemler/islem_base.html' %}
+
+{% block title %}Görüntü Kırpma - Görüntü İşleme{% endblock %}
+
+{% block islem_title %}Görüntü Kırpma{% endblock %}
+
+{% block islem_parametreleri %}
+<div class="mb-3">
+    <label class="form-label">Kırpma Koordinatları</label>
+    <div class="row g-2">
+        <div class="col-6">
+            <label class="form-label small">Başlangıç X</label>
+            <input type="number" class="form-control" id="startX" min="0" value="0">
+        </div>
+        <div class="col-6">
+            <label class="form-label small">Başlangıç Y</label>
+            <input type="number" class="form-control" id="startY" min="0" value="0">
+        </div>
+        <div class="col-6">
+            <label class="form-label small">Genişlik</label>
+            <input type="number" class="form-control" id="width" min="1" value="100">
+        </div>
+        <div class="col-6">
+            <label class="form-label small">Yükseklik</label>
+            <input type="number" class="form-control" id="height" min="1" value="100">
+        </div>
+    </div>
+</div>
+<div class="mb-3">
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="aspectRatio">
+        <label class="form-check-label" for="aspectRatio">
+            En-Boy Oranını Koru
+        </label>
+    </div>
+</div>
+{% endblock %}
+
+{% block islem_js %}
+document.getElementById('processButton').addEventListener('click', function() {
+    console.log('Görüntü kırpma işlemi başlatıldı');
+    console.log('Başlangıç X:', document.getElementById('startX').value);
+    console.log('Başlangıç Y:', document.getElementById('startY').value);
+    console.log('Genişlik:', document.getElementById('width').value);
+    console.log('Yükseklik:', document.getElementById('height').value);
+    console.log('En-Boy oranı korunacak:', document.getElementById('aspectRatio').checked);
+});
+{% endblock %} 

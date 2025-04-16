@@ -1,0 +1,119 @@
+{% extends 'core/islemler/islem_base.html' %}
+
+{% block title %}Kenar Algılama - Görüntü İşleme{% endblock %}
+
+{% block islem_title %}Kenar Algılama{% endblock %}
+
+{% block islem_parametreleri %}
+<div class="mb-3">
+    <label class="form-label">Kenar Algılama Yöntemi</label>
+    <select class="form-select" id="yontem">
+        <option value="sobel">Sobel Operatörü</option>
+        <option value="prewitt">Prewitt Operatörü</option>
+        <option value="canny">Canny Kenar Algılama</option>
+        <option value="laplacian">Laplacian Operatörü</option>
+    </select>
+</div>
+
+<div id="cannyParametreleri" style="display: none;">
+    <div class="mb-3">
+        <label class="form-label">Alt Eşik Değeri</label>
+        <div class="d-flex align-items-center gap-2">
+            <input type="range" class="form-range" id="altEsik" min="0" max="255" value="100">
+            <span id="altEsikDeger">100</span>
+        </div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Üst Eşik Değeri</label>
+        <div class="d-flex align-items-center gap-2">
+            <input type="range" class="form-range" id="ustEsik" min="0" max="255" value="200">
+            <span id="ustEsikDeger">200</span>
+        </div>
+    </div>
+</div>
+
+<div id="sobelPrewittParametreleri" class="mb-3" style="display: none;">
+    <label class="form-label">Yön</label>
+    <select class="form-select" id="yon">
+        <option value="yatay">Yatay (x)</option>
+        <option value="dikey">Dikey (y)</option>
+        <option value="her_iki">Her İki Yön</option>
+    </select>
+</div>
+
+<div class="mb-3">
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="onIslemUygula">
+        <label class="form-check-label" for="onIslemUygula">
+            Gürültü Azaltma Ön İşlemi Uygula
+        </label>
+    </div>
+</div>
+
+<div id="onIslemParametreleri" class="mb-3" style="display: none;">
+    <label class="form-label">Gürültü Azaltma Filtre Boyutu</label>
+    <div class="d-flex align-items-center gap-2">
+        <input type="range" class="form-range" id="filtreBoyutu" min="3" max="7" step="2" value="3">
+        <span id="filtreBoyutuDeger">3x3</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block islem_js %}
+const yontemSelect = document.getElementById('yontem');
+const cannyParams = document.getElementById('cannyParametreleri');
+const sobelPrewittParams = document.getElementById('sobelPrewittParametreleri');
+const onIslemCheckbox = document.getElementById('onIslemUygula');
+const onIslemParams = document.getElementById('onIslemParametreleri');
+const altEsik = document.getElementById('altEsik');
+const ustEsik = document.getElementById('ustEsik');
+const altEsikDeger = document.getElementById('altEsikDeger');
+const ustEsikDeger = document.getElementById('ustEsikDeger');
+const filtreBoyutu = document.getElementById('filtreBoyutu');
+const filtreBoyutuDeger = document.getElementById('filtreBoyutuDeger');
+
+yontemSelect.addEventListener('change', function() {
+    cannyParams.style.display = this.value === 'canny' ? 'block' : 'none';
+    sobelPrewittParams.style.display = ['sobel', 'prewitt'].includes(this.value) ? 'block' : 'none';
+});
+
+onIslemCheckbox.addEventListener('change', function() {
+    onIslemParams.style.display = this.checked ? 'block' : 'none';
+});
+
+altEsik.addEventListener('input', function() {
+    altEsikDeger.textContent = this.value;
+    if (parseInt(this.value) > parseInt(ustEsik.value)) {
+        ustEsik.value = this.value;
+        ustEsikDeger.textContent = this.value;
+    }
+});
+
+ustEsik.addEventListener('input', function() {
+    ustEsikDeger.textContent = this.value;
+    if (parseInt(this.value) < parseInt(altEsik.value)) {
+        altEsik.value = this.value;
+        altEsikDeger.textContent = this.value;
+    }
+});
+
+filtreBoyutu.addEventListener('input', function() {
+    filtreBoyutuDeger.textContent = `${this.value}x${this.value}`;
+});
+
+document.getElementById('processButton').addEventListener('click', function() {
+    console.log('Kenar algılama işlemi başlatıldı');
+    console.log('Seçilen yöntem:', yontemSelect.value);
+    
+    if (yontemSelect.value === 'canny') {
+        console.log('Alt eşik:', altEsik.value);
+        console.log('Üst eşik:', ustEsik.value);
+    } else if (['sobel', 'prewitt'].includes(yontemSelect.value)) {
+        console.log('Yön:', document.getElementById('yon').value);
+    }
+    
+    if (onIslemCheckbox.checked) {
+        console.log('Gürültü azaltma filtre boyutu:', filtreBoyutu.value + 'x' + filtreBoyutu.value);
+    }
+});
+{% endblock %} 

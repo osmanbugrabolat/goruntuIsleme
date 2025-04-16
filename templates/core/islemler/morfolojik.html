@@ -1,0 +1,83 @@
+{% extends 'core/islemler/islem_base.html' %}
+
+{% block title %}Morfolojik İşlemler - Görüntü İşleme{% endblock %}
+
+{% block islem_title %}Morfolojik İşlemler{% endblock %}
+
+{% block islem_parametreleri %}
+<div class="mb-3">
+    <label class="form-label">Morfolojik İşlem Türü</label>
+    <select class="form-select" id="islemTuru">
+        <option value="genisletme">Genişletme (Dilation)</option>
+        <option value="erozyon">Erozyon (Erosion)</option>
+        <option value="acma">Açma (Opening)</option>
+        <option value="kapama">Kapama (Closing)</option>
+        <option value="gradyan">Morfolojik Gradyan</option>
+    </select>
+</div>
+
+<div class="mb-3">
+    <label class="form-label">Yapısal Element Şekli</label>
+    <select class="form-select" id="yapisalElement">
+        <option value="kare">Kare</option>
+        <option value="dikdortgen">Dikdörtgen</option>
+        <option value="elips">Elips</option>
+        <option value="cross">Çapraz (Cross)</option>
+    </select>
+</div>
+
+<div class="mb-3">
+    <label class="form-label">Yapısal Element Boyutu</label>
+    <div class="row">
+        <div class="col">
+            <label class="form-label">Genişlik</label>
+            <div class="d-flex align-items-center gap-2">
+                <input type="range" class="form-range" id="genislik" min="3" max="21" step="2" value="3">
+                <span id="genislikDeger">3</span>
+            </div>
+        </div>
+        <div class="col">
+            <label class="form-label">Yükseklik</label>
+            <div class="d-flex align-items-center gap-2">
+                <input type="range" class="form-range" id="yukseklik" min="3" max="21" step="2" value="3">
+                <span id="yukseklikDeger">3</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mb-3">
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="onIslemUygula">
+        <label class="form-check-label" for="onIslemUygula">
+            İkili Görüntüye Dönüştür (Thresholding)
+        </label>
+    </div>
+</div>
+{% endblock %}
+
+{% block islem_js %}
+const genislik = document.getElementById('genislik');
+const yukseklik = document.getElementById('yukseklik');
+const genislikDeger = document.getElementById('genislikDeger');
+const yukseklikDeger = document.getElementById('yukseklikDeger');
+
+genislik.addEventListener('input', function() {
+    genislikDeger.textContent = this.value;
+});
+
+yukseklik.addEventListener('input', function() {
+    yukseklikDeger.textContent = this.value;
+});
+
+document.getElementById('processButton').addEventListener('click', function() {
+    console.log('Morfolojik işlem başlatıldı');
+    console.log('İşlem türü:', document.getElementById('islemTuru').value);
+    console.log('Yapısal element:', document.getElementById('yapisalElement').value);
+    console.log('Boyutlar:', {
+        genislik: genislik.value,
+        yukseklik: yukseklik.value
+    });
+    console.log('İkili görüntü dönüşümü:', document.getElementById('onIslemUygula').checked);
+});
+{% endblock %} 

@@ -1,0 +1,89 @@
+{% extends 'core/islemler/islem_base.html' %}
+
+{% block title %}Gürültü İşlemleri - Görüntü İşleme{% endblock %}
+
+{% block islem_title %}Gürültü İşlemleri{% endblock %}
+
+{% block islem_parametreleri %}
+<div class="mb-3">
+    <label class="form-label">İşlem Türü</label>
+    <select class="form-select" id="islemTuru">
+        <option value="ekle">Gürültü Ekle</option>
+        <option value="temizle">Gürültü Temizle</option>
+    </select>
+</div>
+
+<div id="gurultuEklemeParametreleri">
+    <div class="mb-3">
+        <label class="form-label">Gürültü Türü</label>
+        <select class="form-select" id="gurultuTuru">
+            <option value="saltpepper">Tuz ve Biber (Salt & Pepper)</option>
+            <option value="gaussian">Gauss Gürültüsü</option>
+            <option value="speckle">Benek (Speckle) Gürültüsü</option>
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Gürültü Yoğunluğu</label>
+        <div class="d-flex align-items-center gap-2">
+            <input type="range" class="form-range" id="gurultuYogunlugu" min="0" max="100" value="10">
+            <span id="yogunlukDeger">10%</span>
+        </div>
+    </div>
+</div>
+
+<div id="gurultuTemizlemeParametreleri" style="display: none;">
+    <div class="mb-3">
+        <label class="form-label">Filtre Türü</label>
+        <select class="form-select" id="filtreTuru">
+            <option value="mean">Ortalama Filtre</option>
+            <option value="median">Medyan Filtre</option>
+            <option value="gaussian">Gauss Filtre</option>
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Filtre Boyutu</label>
+        <div class="d-flex align-items-center gap-2">
+            <input type="range" class="form-range" id="filtreBoyutu" min="3" max="9" step="2" value="3">
+            <span id="boyutDeger">3x3</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block islem_js %}
+const islemTuru = document.getElementById('islemTuru');
+const gurultuEklemeParametreleri = document.getElementById('gurultuEklemeParametreleri');
+const gurultuTemizlemeParametreleri = document.getElementById('gurultuTemizlemeParametreleri');
+const gurultuYogunlugu = document.getElementById('gurultuYogunlugu');
+const yogunlukDeger = document.getElementById('yogunlukDeger');
+const filtreBoyutu = document.getElementById('filtreBoyutu');
+const boyutDeger = document.getElementById('boyutDeger');
+
+islemTuru.addEventListener('change', function() {
+    gurultuEklemeParametreleri.style.display = this.value === 'ekle' ? 'block' : 'none';
+    gurultuTemizlemeParametreleri.style.display = this.value === 'temizle' ? 'block' : 'none';
+});
+
+gurultuYogunlugu.addEventListener('input', function() {
+    yogunlukDeger.textContent = this.value + '%';
+});
+
+filtreBoyutu.addEventListener('input', function() {
+    boyutDeger.textContent = `${this.value}x${this.value}`;
+});
+
+document.getElementById('processButton').addEventListener('click', function() {
+    console.log('Gürültü işlemi başlatıldı');
+    console.log('İşlem türü:', islemTuru.value);
+    
+    if (islemTuru.value === 'ekle') {
+        console.log('Gürültü türü:', document.getElementById('gurultuTuru').value);
+        console.log('Gürültü yoğunluğu:', gurultuYogunlugu.value + '%');
+    } else {
+        console.log('Filtre türü:', document.getElementById('filtreTuru').value);
+        console.log('Filtre boyutu:', filtreBoyutu.value + 'x' + filtreBoyutu.value);
+    }
+});
+{% endblock %} 

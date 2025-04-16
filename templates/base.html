@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Görüntü İşleme{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="wrapper">
+        <!-- Sidebar -->
+        <nav id="sidebar" class="active">
+            <div class="sidebar-header">
+                <h3>Görüntü İşleme</h3>
+            </div>
+
+            <ul class="list-unstyled components">
+                <li class="active">
+                    <a href="{% url 'core:anasayfa' %}">
+                        <i class="bi bi-house-door"></i>
+                        <span>Ana Sayfa</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'core:gri_donusum' %}">
+                        <i class="bi bi-image"></i>
+                        <span>Gri Dönüşüm</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'core:binary_donusum' %}">
+                        <i class="bi bi-circle-half"></i>
+                        <span>Binary Dönüşüm</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'core:goruntu_dondurme' %}">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        <span>Görüntü Döndürme</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'core:goruntu_kirpma' %}">
+                        <i class="bi bi-crop"></i>
+                        <span>Görüntü Kırpma</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'core:yakinlastirma' %}">
+                        <i class="bi bi-zoom-in"></i>
+                        <span>Yakınlaştırma/Uzaklaştırma</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'core:histogram' %}">
+                        <i class="bi bi-bar-chart"></i>
+                        <span>Histogram İşlemleri</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'core:kontrast' %}">
+                        <i class="bi bi-brightness-high"></i>
+                        <span>Kontrast Ayarlama</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'core:kenar_bulma' %}">
+                        <i class="bi bi-bounding-box"></i>
+                        <span>Kenar Bulma</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'core:gurultu' %}">
+                        <i class="bi bi-snow"></i>
+                        <span>Gürültü İşlemleri</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'core:morfolojik' %}">
+                        <i class="bi bi-boxes"></i>
+                        <span>Morfolojik İşlemler</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Page Content -->
+        <div id="content">
+            <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                <div class="container-fluid">
+                    <button type="button" id="sidebarCollapse" class="btn btn-primary">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <div class="ms-auto d-flex align-items-center">
+                        <div class="theme-switch-wrapper">
+                            <label class="theme-switch" for="checkbox">
+                                <input type="checkbox" id="checkbox" />
+                                <div class="slider round"></div>
+                            </label>
+                            <em><i class="bi bi-moon-stars"></i></em>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <main class="container-fluid">
+                {% block content %}
+                {% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html> 

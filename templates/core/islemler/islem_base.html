@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0">{% block islem_title %}İşlem Başlığı{% endblock %}</h1>
+    </div>
+
+    <div class="row">
+        <!-- Görüntü Yükleme ve Önizleme -->
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Görüntü Yükleme ve İşleme</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="upload-area text-center py-5 border rounded mb-4">
+                                <i class="bi bi-cloud-upload display-1 text-gray-300 mb-4"></i>
+                                <h4 class="mb-3">Görüntü Yükle</h4>
+                                <p class="text-muted mb-4">Desteklenen formatlar: JPG, PNG, BMP</p>
+                                <input type="file" id="imageInput" class="d-none" accept="image/*">
+                                <button class="btn btn-primary btn-lg" onclick="document.getElementById('imageInput').click()">
+                                    <i class="bi bi-upload me-2"></i>Dosya Seç
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="preview-area text-center py-5 border rounded mb-4">
+                                <div id="imagePreview">
+                                    <i class="bi bi-image display-1 text-gray-300 mb-4"></i>
+                                    <h4 class="text-muted">Önizleme</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <button class="btn btn-success" disabled id="processButton">
+                                    <i class="bi bi-play-circle me-2"></i>İşlemi Başlat
+                                </button>
+                                <button class="btn btn-warning" disabled id="resetButton">
+                                    <i class="bi bi-arrow-counterclockwise me-2"></i>Sıfırla
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- İşlem Detayları -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">İşlem Detayları</h6>
+                </div>
+                <div class="card-body">
+                    <div class="image-details mb-4">
+                        <h6 class="font-weight-bold">Görüntü Bilgileri</h6>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Boyut
+                                <span id="imageSize">-</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Format
+                                <span id="imageFormat">-</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Çözünürlük
+                                <span id="imageResolution">-</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="process-details">
+                        <h6 class="font-weight-bold">İşlem Parametreleri</h6>
+                        <div id="processParameters">
+                            {% block islem_parametreleri %}
+                            {% endblock %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sonuç Alanı -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">İşlem Sonucu</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-center mb-3">Orijinal Görüntü</h6>
+                            <div class="original-image-area text-center py-5 border rounded">
+                                <i class="bi bi-image display-1 text-gray-300"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-center mb-3">İşlenmiş Görüntü</h6>
+                            <div class="processed-image-area text-center py-5 border rounded">
+                                <i class="bi bi-image-alt display-1 text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.getElementById('imageInput').addEventListener('change', function(e) {
+    if (e.target.files && e.target.files[0]) {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const preview = document.getElementById('imagePreview');
+            preview.innerHTML = `<img src="${e.target.result}" class="img-fluid" alt="Yüklenen Görüntü">`;
+            
+            // Butonları aktif et
+            document.getElementById('processButton').disabled = false;
+            document.getElementById('resetButton').disabled = false;
+            
+            // Görüntü bilgilerini güncelle
+            document.getElementById('imageSize').textContent = formatBytes(file.size);
+            document.getElementById('imageFormat').textContent = file.type.split('/')[1].toUpperCase();
+            
+            // Görüntü yüklendiğinde çözünürlüğü al
+            const img = new Image();
+            img.onload = function() {
+                document.getElementById('imageResolution').textContent = `${this.width} x ${this.height}`;
+            }
+            img.src = e.target.result;
+        }
+        
+        reader.readAsDataURL(file);
+    }
+});
+
+function formatBytes(bytes, decimals = 2) {
+    if (bytes === 0) return '0 Bytes';
+    
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+document.getElementById('resetButton').addEventListener('click', function() {
+    // Formu sıfırla
+    document.getElementById('imageInput').value = '';
+    
+    // Önizlemeyi sıfırla
+    document.getElementById('imagePreview').innerHTML = `
+        <i class="bi bi-image display-1 text-gray-300 mb-4"></i>
+        <h4 class="text-muted">Önizleme</h4>
+    `;
+    
+    // Butonları devre dışı bırak
+    this.disabled = true;
+    document.getElementById('processButton').disabled = true;
+    
+    // Görüntü bilgilerini sıfırla
+    document.getElementById('imageSize').textContent = '-';
+    document.getElementById('imageFormat').textContent = '-';
+    document.getElementById('imageResolution').textContent = '-';
+});
+
+{% block islem_js %}{% endblock %}
+</script>
+{% endblock %}
+{% endblock %} 
