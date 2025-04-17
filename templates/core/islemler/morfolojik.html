@@ -56,28 +56,88 @@
 </div>
 {% endblock %}
 
-{% block islem_js %}
-const genislik = document.getElementById('genislik');
-const yukseklik = document.getElementById('yukseklik');
-const genislikDeger = document.getElementById('genislikDeger');
-const yukseklikDeger = document.getElementById('yukseklikDeger');
+{% block extra_js %}
+{{ block.super }}
 
-genislik.addEventListener('input', function() {
-    genislikDeger.textContent = this.value;
+<script>
+// Boyut değerlerini güncelleme
+document.getElementById('genislik').addEventListener('input', function() {
+    document.getElementById('genislikDeger').textContent = this.value;
 });
 
-yukseklik.addEventListener('input', function() {
-    yukseklikDeger.textContent = this.value;
+document.getElementById('yukseklik').addEventListener('input', function() {
+    document.getElementById('yukseklikDeger').textContent = this.value;
 });
 
-document.getElementById('processButton').addEventListener('click', function() {
-    console.log('Morfolojik işlem başlatıldı');
-    console.log('İşlem türü:', document.getElementById('islemTuru').value);
-    console.log('Yapısal element:', document.getElementById('yapisalElement').value);
-    console.log('Boyutlar:', {
-        genislik: genislik.value,
-        yukseklik: yukseklik.value
+// İşlem butonuna tıklandığında
+processButton.addEventListener('click', async function() {
+    if (!imageInput.files[0]) {
+        alert('Lütfen bir görüntü seçin');
+        return;
+    }
+
+    // İşlem başladığında butonları devre dışı bırak
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> İşleniyor...';
+
+    // İşlem parametrelerini al
+    const islemTuru = document.getElementById('islemTuru').value;
+    const yapisalElement = document.getElementById('yapisalElement').value;
+    const genislikDegeri = document.getElementById('genislik').value;
+    const yukseklikDegeri = document.getElementById('yukseklik').value;
+    const onIslemUygula = document.getElementById('onIslemUygula').checked;
+
+    // Debug için parametreleri yazdır
+    console.log('Morfolojik işlem parametreleri:', {
+        islemTuru,
+        yapisalElement,
+        genislik: genislikDegeri,
+        yukseklik: yukseklikDegeri,
+        onIslemUygula
     });
-    console.log('İkili görüntü dönüşümü:', document.getElementById('onIslemUygula').checked);
+
+    try {
+        // Form verilerini oluştur
+        const formData = new FormData();
+        formData.append('image', imageInput.files[0]);
+        formData.append('islemTuru', islemTuru);
+        formData.append('yapisalElement', yapisalElement);
+        formData.append('genislik', genislikDegeri);
+        formData.append('yukseklik', yukseklikDegeri);
+        formData.append('onIslemUygula', onIslemUygula);
+
+        // CSRF token ekle
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        // İşlemi başlat
+        const response = await fetch('/morfolojik/isle/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            body: formData
+        });
+
+        if (!response.ok) {
+            const errorData = await response.text();
+            throw new Error(errorData || 'İşlem sırasında bir hata oluştu');
+        }
+
+        const data = await response.json();
+
+        // İşlenmiş görüntüyü göster
+        processedImage.src = data.image;
+        processedImage.style.display = 'block';
+        processedPlaceholder.style.display = 'none';
+
+    } catch (error) {
+        console.error('Hata:', error);
+        alert('Hata: ' + error.message);
+    } finally {
+        // İşlem bittiğinde butonları tekrar aktif et
+        this.disabled = false;
+        this.innerHTML = '<i class="bi bi-play-circle me-2"></i>İşlemi Başlat';
+    }
 });
+</script>
 {% endblock %} 

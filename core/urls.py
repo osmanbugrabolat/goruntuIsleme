@@ -18,6 +18,9 @@ urlpatterns = [
     path('kontrast/', views.kontrast, name='kontrast'),
     path('kontrast/isle/', views.kontrast_isle_view, name='kontrast_isle'),
     path('kenar-bulma/', views.kenar_bulma, name='kenar_bulma'),
+    path('kenar-bulma/isle/', views.kenar_algilama_isle, name='kenar_algilama_isle'),
     path('gurultu/', views.gurultu, name='gurultu'),
+    path('gurultu/isle/', views.gurultu_isle, name='gurultu_isle'),
     path('morfolojik/', views.morfolojik, name='morfolojik'),
+    path('morfolojik/isle/', views.morfolojik_isle_view, name='morfolojik_isle'),
 ] 

@@ -349,6 +349,68 @@ def kontrast(request):
 def kenar_bulma(request):
     return render(request, 'core/islemler/kenar_algilama.html')
 
+@csrf_exempt
+def kenar_algilama_isle(request):
+    """Kenar algılama işlemini gerçekleştiren view fonksiyonu"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST isteği gerekli'}, status=400)
+    
+    try:
+        # Görüntüyü al
+        if 'image' not in request.FILES:
+            return JsonResponse({'error': 'Görüntü dosyası gerekli'}, status=400)
+        
+        # Parametreleri al
+        yontem = request.POST.get('yontem', 'sobel')
+        yon = request.POST.get('yon', 'her_iki')
+        alt_esik = int(request.POST.get('altEsik', 100))
+        ust_esik = int(request.POST.get('ustEsik', 200))
+        on_islem = request.POST.get('onIslemUygula', 'false').lower() == 'true'
+        filtre_boyutu = int(request.POST.get('filtreBoyutu', 3))
+        
+        # Debug için parametreleri yazdır
+        print(f"Kenar algılama parametreleri:")
+        print(f"Yöntem: {yontem}")
+        print(f"Yön: {yon}")
+        print(f"Alt eşik: {alt_esik}")
+        print(f"Üst eşik: {ust_esik}")
+        print(f"Ön işlem: {on_islem}")
+        print(f"Filtre boyutu: {filtre_boyutu}")
+        
+        # Görüntüyü numpy dizisine dönüştür
+        image = read_image_file(request.FILES['image'])
+        
+        if image is None:
+            return JsonResponse({'error': 'Görüntü okunamadı'}, status=400)
+        
+        # Kenar algılama modülünü import et
+        from .image_processing.edge_detection import kenar_algilama
+        
+        # İşlemi uygula
+        sonuc = kenar_algilama(
+            image=image,
+            yontem=yontem,
+            yon=yon,
+            alt_esik=alt_esik,
+            ust_esik=ust_esik,
+            on_islem=on_islem,
+            filtre_boyutu=filtre_boyutu
+        )
+        
+        # Sonucu base64'e dönüştür
+        processed_image = encode_image_base64(sonuc)
+        
+        return JsonResponse({
+            'success': True,
+            'image': processed_image
+        })
+        
+    except Exception as e:
+        print(f"Hata oluştu: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'error': str(e)}, status=400)
+
 def gurultu(request):
     return render(request, 'core/islemler/gurultu.html')
 
@@ -423,3 +485,132 @@ def histogram_isle_view(request):
             }, status=500)
     
     return JsonResponse({'error': 'Geçersiz istek yöntemi'}, status=405)
+
+@csrf_exempt
+def gurultu_isle(request):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Sadece POST istekleri kabul edilir.'})
+    
+    try:
+        # Görüntüyü al
+        image_file = request.FILES.get('image')
+        if not image_file:
+            return JsonResponse({'success': False, 'error': 'Görüntü bulunamadı.'})
+        
+        # Parametreleri al
+        islem_turu = request.POST.get('islem_turu')
+        
+        # Görüntüyü numpy dizisine çevir
+        img = Image.open(image_file)
+        if img.mode in ['RGBA', 'LA']:
+            # RGBA veya LA (gri+alfa) görüntüyü RGB'ye dönüştür
+            background = Image.new('RGB', img.size, (255, 255, 255))
+            background.paste(img, mask=img.split()[-1])  # Alfa kanalını kullanarak birleştir
+            img = background
+        elif img.mode != 'RGB':
+            img = img.convert('RGB')
+        
+        image_array = np.array(img)
+        
+        # Gürültü işleme modülünü import et
+        from .image_processing.noise import gurultu_isle
+        
+        if islem_turu == 'ekle':
+            gurultu_turu = request.POST.get('gurultu_turu')
+            yogunluk = float(request.POST.get('yogunluk', '10'))
+            
+            # Gürültü ekleme işlemi
+            processed_image = gurultu_isle(
+                image=image_array,
+                islem_turu='ekle',
+                gurultu_turu=gurultu_turu,
+                yogunluk=yogunluk
+            )
+        
+        else:  # islem_turu == 'temizle'
+            filtre_turu = request.POST.get('filtre_turu')
+            filtre_boyutu = int(request.POST.get('filtre_boyutu', '3'))
+            
+            # Gürültü temizleme işlemi
+            processed_image = gurultu_isle(
+                image=image_array,
+                islem_turu='temizle',
+                filtre_turu=filtre_turu,
+                filtre_boyutu=filtre_boyutu
+            )
+        
+        # İşlenmiş görüntüyü base64'e çevir
+        img = Image.fromarray(processed_image.astype('uint8'))
+        buffer = io.BytesIO()
+        img.save(buffer, format='PNG')
+        img_str = base64.b64encode(buffer.getvalue()).decode('utf-8')
+        
+        return JsonResponse({
+            'success': True,
+            'processed_image': img_str
+        })
+        
+    except Exception as e:
+        print(f"Hata: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
+
+@csrf_exempt
+def morfolojik_isle_view(request):
+    """Morfolojik işlemleri gerçekleştiren view fonksiyonu"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST isteği gerekli'}, status=400)
+    
+    try:
+        # Görüntüyü al
+        if 'image' not in request.FILES:
+            return JsonResponse({'error': 'Görüntü dosyası gerekli'}, status=400)
+        
+        # Parametreleri al
+        islem_turu = request.POST.get('islemTuru')
+        yapisal_element = request.POST.get('yapisalElement')
+        genislik = int(request.POST.get('genislik', 3))
+        yukseklik = int(request.POST.get('yukseklik', 3))
+        on_islem = request.POST.get('onIslemUygula', 'false').lower() == 'true'
+        
+        # Debug için parametreleri yazdır
+        print(f"Morfolojik işlem parametreleri:")
+        print(f"İşlem türü: {islem_turu}")
+        print(f"Yapısal element: {yapisal_element}")
+        print(f"Boyutlar: {genislik}x{yukseklik}")
+        print(f"Ön işlem: {on_islem}")
+        
+        # Görüntüyü numpy dizisine dönüştür
+        image = read_image_file(request.FILES['image'])
+        
+        if image is None:
+            return JsonResponse({'error': 'Görüntü okunamadı'}, status=400)
+        
+        # Morfolojik işlem modülünü import et
+        from .image_processing.morphology import morfolojik_isle
+        
+        # İşlemi uygula
+        sonuc = morfolojik_isle(
+            image=image,
+            islem_turu=islem_turu,
+            yapisal_element_sekli=yapisal_element,
+            genislik=genislik,
+            yukseklik=yukseklik,
+            on_islem=on_islem
+        )
+        
+        # Sonucu base64'e dönüştür
+        processed_image = encode_image_base64(sonuc)
+        
+        return JsonResponse({
+            'success': True,
+            'image': processed_image
+        })
+        
+    except Exception as e:
+        print(f"Hata oluştu: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'error': str(e)}, status=400)

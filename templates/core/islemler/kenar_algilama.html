@@ -59,61 +59,125 @@
 </div>
 {% endblock %}
 
-{% block islem_js %}
-const yontemSelect = document.getElementById('yontem');
-const cannyParams = document.getElementById('cannyParametreleri');
-const sobelPrewittParams = document.getElementById('sobelPrewittParametreleri');
-const onIslemCheckbox = document.getElementById('onIslemUygula');
-const onIslemParams = document.getElementById('onIslemParametreleri');
-const altEsik = document.getElementById('altEsik');
-const ustEsik = document.getElementById('ustEsik');
-const altEsikDeger = document.getElementById('altEsikDeger');
-const ustEsikDeger = document.getElementById('ustEsikDeger');
-const filtreBoyutu = document.getElementById('filtreBoyutu');
-const filtreBoyutuDeger = document.getElementById('filtreBoyutuDeger');
+{% block extra_js %}
+{{ block.super }}
 
-yontemSelect.addEventListener('change', function() {
-    cannyParams.style.display = this.value === 'canny' ? 'block' : 'none';
-    sobelPrewittParams.style.display = ['sobel', 'prewitt'].includes(this.value) ? 'block' : 'none';
+<script>
+// Parametre alanlarını kontrol et
+document.getElementById('yontem').addEventListener('change', function() {
+    document.getElementById('cannyParametreleri').style.display = 
+        this.value === 'canny' ? 'block' : 'none';
+    
+    document.getElementById('sobelPrewittParametreleri').style.display = 
+        ['sobel', 'prewitt'].includes(this.value) ? 'block' : 'none';
 });
 
-onIslemCheckbox.addEventListener('change', function() {
-    onIslemParams.style.display = this.checked ? 'block' : 'none';
+// Ön işlem parametrelerini kontrol et
+document.getElementById('onIslemUygula').addEventListener('change', function() {
+    document.getElementById('onIslemParametreleri').style.display = 
+        this.checked ? 'block' : 'none';
 });
 
-altEsik.addEventListener('input', function() {
-    altEsikDeger.textContent = this.value;
+// Eşik değerlerini güncelle
+document.getElementById('altEsik').addEventListener('input', function() {
+    document.getElementById('altEsikDeger').textContent = this.value;
+    const ustEsik = document.getElementById('ustEsik');
     if (parseInt(this.value) > parseInt(ustEsik.value)) {
         ustEsik.value = this.value;
-        ustEsikDeger.textContent = this.value;
+        document.getElementById('ustEsikDeger').textContent = this.value;
     }
 });
 
-ustEsik.addEventListener('input', function() {
-    ustEsikDeger.textContent = this.value;
+document.getElementById('ustEsik').addEventListener('input', function() {
+    document.getElementById('ustEsikDeger').textContent = this.value;
+    const altEsik = document.getElementById('altEsik');
     if (parseInt(this.value) < parseInt(altEsik.value)) {
         altEsik.value = this.value;
-        altEsikDeger.textContent = this.value;
+        document.getElementById('altEsikDeger').textContent = this.value;
     }
 });
 
-filtreBoyutu.addEventListener('input', function() {
-    filtreBoyutuDeger.textContent = `${this.value}x${this.value}`;
+// Filtre boyutunu güncelle
+document.getElementById('filtreBoyutu').addEventListener('input', function() {
+    document.getElementById('filtreBoyutuDeger').textContent = `${this.value}x${this.value}`;
 });
 
-document.getElementById('processButton').addEventListener('click', function() {
-    console.log('Kenar algılama işlemi başlatıldı');
-    console.log('Seçilen yöntem:', yontemSelect.value);
-    
-    if (yontemSelect.value === 'canny') {
-        console.log('Alt eşik:', altEsik.value);
-        console.log('Üst eşik:', ustEsik.value);
-    } else if (['sobel', 'prewitt'].includes(yontemSelect.value)) {
-        console.log('Yön:', document.getElementById('yon').value);
+// İşlem butonuna tıklandığında
+processButton.addEventListener('click', async function() {
+    if (!imageInput.files[0]) {
+        alert('Lütfen bir görüntü seçin');
+        return;
     }
-    
-    if (onIslemCheckbox.checked) {
-        console.log('Gürültü azaltma filtre boyutu:', filtreBoyutu.value + 'x' + filtreBoyutu.value);
+
+    // İşlem başladığında butonları devre dışı bırak
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> İşleniyor...';
+
+    // İşlem parametrelerini al
+    const yontem = document.getElementById('yontem').value;
+    const yon = document.getElementById('yon')?.value;
+    const altEsik = document.getElementById('altEsik').value;
+    const ustEsik = document.getElementById('ustEsik').value;
+    const onIslemUygula = document.getElementById('onIslemUygula').checked;
+    const filtreBoyutu = document.getElementById('filtreBoyutu').value;
+
+    // Debug için parametreleri yazdır
+    console.log('Kenar algılama parametreleri:', {
+        yontem,
+        yon,
+        altEsik,
+        ustEsik,
+        onIslemUygula,
+        filtreBoyutu
+    });
+
+    try {
+        // Form verilerini oluştur
+        const formData = new FormData();
+        formData.append('image', imageInput.files[0]);
+        formData.append('yontem', yontem);
+        if (['sobel', 'prewitt'].includes(yontem)) {
+            formData.append('yon', yon);
+        }
+        if (yontem === 'canny') {
+            formData.append('altEsik', altEsik);
+            formData.append('ustEsik', ustEsik);
+        }
+        formData.append('onIslemUygula', onIslemUygula);
+        formData.append('filtreBoyutu', filtreBoyutu);
+
+        // CSRF token ekle
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        // İşlemi başlat
+        const response = await fetch('/kenar-bulma/isle/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            body: formData
+        });
+
+        if (!response.ok) {
+            const errorData = await response.text();
+            throw new Error(errorData || 'İşlem sırasında bir hata oluştu');
+        }
+
+        const data = await response.json();
+
+        // İşlenmiş görüntüyü göster
+        processedImage.src = data.image;
+        processedImage.style.display = 'block';
+        processedPlaceholder.style.display = 'none';
+
+    } catch (error) {
+        console.error('Hata:', error);
+        alert('Hata: ' + error.message);
+    } finally {
+        // İşlem bittiğinde butonları tekrar aktif et
+        this.disabled = false;
+        this.innerHTML = '<i class="bi bi-play-circle me-2"></i>İşlemi Başlat';
     }
 });
+</script>
 {% endblock %} 

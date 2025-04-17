@@ -53,6 +53,7 @@
 {% endblock %}
 
 {% block islem_js %}
+// İşlem parametreleri için gerekli elementleri seç
 const islemTuru = document.getElementById('islemTuru');
 const gurultuEklemeParametreleri = document.getElementById('gurultuEklemeParametreleri');
 const gurultuTemizlemeParametreleri = document.getElementById('gurultuTemizlemeParametreleri');
@@ -61,29 +62,61 @@ const yogunlukDeger = document.getElementById('yogunlukDeger');
 const filtreBoyutu = document.getElementById('filtreBoyutu');
 const boyutDeger = document.getElementById('boyutDeger');
 
+// İşlem türü değiştiğinde parametreleri güncelle
 islemTuru.addEventListener('change', function() {
     gurultuEklemeParametreleri.style.display = this.value === 'ekle' ? 'block' : 'none';
     gurultuTemizlemeParametreleri.style.display = this.value === 'temizle' ? 'block' : 'none';
 });
 
+// Yoğunluk değeri değiştiğinde göstergeyi güncelle
 gurultuYogunlugu.addEventListener('input', function() {
     yogunlukDeger.textContent = this.value + '%';
 });
 
+// Filtre boyutu değiştiğinde göstergeyi güncelle
 filtreBoyutu.addEventListener('input', function() {
     boyutDeger.textContent = `${this.value}x${this.value}`;
 });
 
-document.getElementById('processButton').addEventListener('click', function() {
-    console.log('Gürültü işlemi başlatıldı');
-    console.log('İşlem türü:', islemTuru.value);
-    
-    if (islemTuru.value === 'ekle') {
-        console.log('Gürültü türü:', document.getElementById('gurultuTuru').value);
-        console.log('Gürültü yoğunluğu:', gurultuYogunlugu.value + '%');
-    } else {
-        console.log('Filtre türü:', document.getElementById('filtreTuru').value);
-        console.log('Filtre boyutu:', filtreBoyutu.value + 'x' + filtreBoyutu.value);
+// İşlem başlat butonuna tıklandığında
+processButton.addEventListener('click', async function() {
+    try {
+        const formData = new FormData();
+        formData.append('image', imageInput.files[0]);
+        formData.append('islem_turu', islemTuru.value);
+        
+        if (islemTuru.value === 'ekle') {
+            formData.append('gurultu_turu', document.getElementById('gurultuTuru').value);
+            formData.append('yogunluk', gurultuYogunlugu.value);
+        } else {
+            formData.append('filtre_turu', document.getElementById('filtreTuru').value);
+            formData.append('filtre_boyutu', filtreBoyutu.value);
+        }
+
+        const response = await fetch('/gurultu/isle/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        
+        if (result.success) {
+            processedImage.src = `data:image/jpeg;base64,${result.processed_image}`;
+            processedImage.style.display = 'block';
+            processedPlaceholder.style.display = 'none';
+        } else {
+            alert('İşlem sırasında bir hata oluştu: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Hata:', error);
+        alert('İşlem sırasında bir hata oluştu.');
     }
 });
 {% endblock %} 
