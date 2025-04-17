@@ -1,7 +1,11 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
 <div class="container-fluid">
+    <!-- CSRF Token -->
+    {% csrf_token %}
+    
     <!-- Page Heading -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0">{% block islem_title %}İşlem Başlığı{% endblock %}</h1>

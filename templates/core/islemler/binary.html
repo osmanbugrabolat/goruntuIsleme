@@ -1,0 +1,73 @@
+{% extends 'core/islemler/islem_base.html' %}
+
+{% block islem_title %}Binary Dönüşüm{% endblock %}
+
+{% block islem_parametreleri %}
+<div class="mb-4">
+    <label for="thresholdRange" class="form-label d-flex justify-content-between">
+        <span>Eşik Değeri</span>
+        <span id="thresholdValue">127</span>
+    </label>
+    <input type="range" class="form-range" id="thresholdRange" min="0" max="255" value="127">
+    <div class="form-text">Eşik değeri 0-255 arasında olmalıdır.</div>
+</div>
+{% endblock %}
+
+{% block islem_js %}
+document.getElementById('processButton').addEventListener('click', async function() {
+    try {
+        const imageInput = document.getElementById('imageInput');
+        if (!imageInput.files || !imageInput.files[0]) {
+            throw new Error('Lütfen bir görüntü seçin');
+        }
+
+        // İşlem parametrelerini al
+        const threshold = document.getElementById('thresholdRange').value;
+
+        // Form verilerini oluştur
+        const formData = new FormData();
+        formData.append('image', imageInput.files[0]);
+        formData.append('threshold', threshold);
+        formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+        // İşlem başladı bildirimi
+        console.log('İşlem başladı. Parametreler:', {
+            threshold: threshold
+        });
+
+        // Sunucuya istek gönder
+        const response = await fetch('', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error('Sunucu hatası: ' + response.status);
+        }
+
+        const data = await response.json();
+
+        if (data.error) {
+            throw new Error(data.error);
+        }
+
+        // Sonuç görüntüsünü göster
+        const processedImageArea = document.querySelector('.processed-image-area');
+        processedImageArea.innerHTML = `<img src="${data.processed_image}" class="img-fluid" alt="İşlenmiş Görüntü">`;
+
+        // Orijinal görüntüyü göster
+        const originalImageArea = document.querySelector('.original-image-area');
+        const originalImage = document.getElementById('imagePreview').querySelector('img');
+        originalImageArea.innerHTML = `<img src="${originalImage.src}" class="img-fluid" alt="Orijinal Görüntü">`;
+
+    } catch (error) {
+        console.error('Hata:', error);
+        alert('Hata: ' + error.message);
+    }
+});
+
+// Eşik değeri değiştiğinde göstergeyi güncelle
+document.getElementById('thresholdRange').addEventListener('input', function(e) {
+    document.getElementById('thresholdValue').textContent = e.target.value;
+});
+{% endblock %} 

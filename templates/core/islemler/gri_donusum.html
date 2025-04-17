@@ -7,7 +7,7 @@
 {% block islem_parametreleri %}
 <div class="mb-3">
     <label class="form-label">Dönüşüm Yöntemi</label>
-    <select class="form-select" id="donusumYontemi">
+    <select class="form-select" id="donusumYontemi" name="method">
         <option value="ortalama">Ortalama Yöntemi</option>
         <option value="agirlikli">Ağırlıklı Ortalama</option>
         <option value="luminosity">Luminosity Yöntemi</option>
@@ -16,9 +16,61 @@
 {% endblock %}
 
 {% block islem_js %}
-document.getElementById('processButton').addEventListener('click', function() {
-    // İşlem başlatma kodları buraya gelecek
-    console.log('Gri dönüşüm işlemi başlatıldı');
-    console.log('Seçilen yöntem:', document.getElementById('donusumYontemi').value);
+document.getElementById('processButton').addEventListener('click', async function() {
+    const imageInput = document.getElementById('imageInput');
+    const donusumSelect = document.getElementById('donusumYontemi');
+    const originalImageArea = document.querySelector('.original-image-area');
+    const processedImageArea = document.querySelector('.processed-image-area');
+    
+    if (!imageInput.files || !imageInput.files[0]) {
+        alert('Lütfen bir görüntü seçin');
+        return;
+    }
+
+    if (!donusumSelect) {
+        alert('Dönüşüm yöntemi seçimi bulunamadı');
+        return;
+    }
+
+    // Form verilerini hazırla
+    const formData = new FormData();
+    formData.append('image', imageInput.files[0]);
+    formData.append('method', donusumSelect.value);
+    
+    try {
+        // Yükleniyor durumunu göster
+        processedImageArea.innerHTML = '<div class="d-flex justify-content-center align-items-center h-100"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Yükleniyor...</span></div></div>';
+        
+        // CSRF token al
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        // AJAX isteği gönder
+        const response = await fetch(window.location.href, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': csrfToken
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // İşlenmiş görüntüyü göster
+            processedImageArea.innerHTML = `<img src="${data.processed_image}" class="img-fluid" alt="İşlenmiş Görüntü">`;
+            
+            // Orijinal görüntüyü göster
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                originalImageArea.innerHTML = `<img src="${e.target.result}" class="img-fluid" alt="Orijinal Görüntü">`;
+            }
+            reader.readAsDataURL(imageInput.files[0]);
+        } else {
+            throw new Error(data.error || 'Görüntü işlenirken bir hata oluştu');
+        }
+    } catch (error) {
+        // Hata mesajını göster
+        processedImageArea.innerHTML = `<div class="alert alert-danger" role="alert">${error.message}</div>`;
+    }
 });
 {% endblock %} 

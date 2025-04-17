@@ -6,30 +6,116 @@
 
 {% block islem_parametreleri %}
 <div class="mb-3">
+    <label class="form-label">Eşikleme Yöntemi</label>
+    <select class="form-select" id="esiklemeYontemi">
+        <option value="basit">Basit Eşikleme</option>
+        <option value="otsu">Otsu Eşikleme (Otomatik)</option>
+        <option value="adaptif">Adaptif Eşikleme (Lokal)</option>
+    </select>
+    <div class="form-text" id="yontemAciklama">
+        Basit eşikleme için eşik değerini manuel olarak belirleyebilirsiniz.
+    </div>
+</div>
+
+<div class="mb-3" id="esikDegeriContainer">
     <label class="form-label">Eşik Değeri</label>
     <input type="range" class="form-range" id="esikDegeri" min="0" max="255" value="127">
     <div class="text-center">
         <span id="esikDegeriText">127</span>
     </div>
 </div>
-<div class="mb-3">
-    <label class="form-label">Eşikleme Yöntemi</label>
-    <select class="form-select" id="esiklemeYontemi">
-        <option value="basit">Basit Eşikleme</option>
-        <option value="otsu">Otsu Eşikleme</option>
-        <option value="adaptif">Adaptif Eşikleme</option>
-    </select>
-</div>
 {% endblock %}
 
 {% block islem_js %}
+// Eşik değeri değiştiğinde göstergeyi güncelle
 document.getElementById('esikDegeri').addEventListener('input', function() {
     document.getElementById('esikDegeriText').textContent = this.value;
 });
 
-document.getElementById('processButton').addEventListener('click', function() {
-    console.log('Binary dönüşüm işlemi başlatıldı');
-    console.log('Eşik değeri:', document.getElementById('esikDegeri').value);
-    console.log('Seçilen yöntem:', document.getElementById('esiklemeYontemi').value);
+// Eşikleme yöntemi değiştiğinde
+document.getElementById('esiklemeYontemi').addEventListener('change', function() {
+    const esikDegeriContainer = document.getElementById('esikDegeriContainer');
+    const yontemAciklama = document.getElementById('yontemAciklama');
+    
+    if (this.value === 'otsu') {
+        esikDegeriContainer.style.display = 'none';
+        yontemAciklama.textContent = 'Otsu yöntemi, görüntü histogramını analiz ederek otomatik olarak en iyi eşik değerini belirler.';
+    } else if (this.value === 'adaptif') {
+        esikDegeriContainer.style.display = 'none';
+        yontemAciklama.textContent = 'Adaptif eşikleme, her piksel için çevresindeki piksellerin ortalamasını kullanarak lokal eşik değeri hesaplar.';
+    } else {
+        esikDegeriContainer.style.display = 'block';
+        yontemAciklama.textContent = 'Basit eşikleme için eşik değerini manuel olarak belirleyebilirsiniz.';
+    }
+});
+
+// İşlem butonuna tıklandığında
+document.getElementById('processButton').addEventListener('click', async function() {
+    try {
+        const imageInput = document.getElementById('imageInput');
+        if (!imageInput.files || !imageInput.files[0]) {
+            throw new Error('Lütfen bir görüntü seçin');
+        }
+
+        // İşlem parametrelerini al
+        const esikDegeri = document.getElementById('esikDegeri').value;
+        const esiklemeYontemi = document.getElementById('esiklemeYontemi').value;
+
+        // Form verilerini oluştur
+        const formData = new FormData();
+        formData.append('image', imageInput.files[0]);
+        formData.append('esikDegeri', esikDegeri);
+        formData.append('esiklemeYontemi', esiklemeYontemi);
+        formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+        // İşlem başladı bildirimi
+        console.log('Binary dönüşüm işlemi başlatıldı');
+        console.log('Parametreler:', {
+            esikDegeri: esikDegeri,
+            esiklemeYontemi: esiklemeYontemi
+        });
+
+        // Yükleniyor göstergesi
+        const processedImageArea = document.querySelector('.processed-image-area');
+        processedImageArea.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Yükleniyor...</span></div></div>';
+
+        // Sunucuya istek gönder
+        const response = await fetch(window.location.href, {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Sunucu hatası: ' + response.status);
+        }
+
+        const data = await response.json();
+
+        if (data.error) {
+            throw new Error(data.error);
+        }
+
+        // Sonuç görüntüsünü göster
+        processedImageArea.innerHTML = `<img src="${data.processed_image}" class="img-fluid" alt="İşlenmiş Görüntü">`;
+
+        // Orijinal görüntüyü göster
+        const originalImageArea = document.querySelector('.original-image-area');
+        const originalImage = document.getElementById('imagePreview').querySelector('img');
+        originalImageArea.innerHTML = `<img src="${originalImage.src}" class="img-fluid" alt="Orijinal Görüntü">`;
+
+    } catch (error) {
+        console.error('Hata:', error);
+        alert('Hata: ' + error.message);
+        // Hata durumunda yükleniyor göstergesini kaldır
+        const processedImageArea = document.querySelector('.processed-image-area');
+        processedImageArea.innerHTML = '<div class="text-center text-danger">Hata oluştu</div>';
+    }
+});
+
+// Sayfa yüklendiğinde başlangıç açıklamasını göster
+document.addEventListener('DOMContentLoaded', function() {
+    const yontemAciklama = document.getElementById('yontemAciklama');
+    yontemAciklama.textContent = 'Basit eşikleme için eşik değerini manuel olarak belirleyebilirsiniz.';
 });
 {% endblock %} 
