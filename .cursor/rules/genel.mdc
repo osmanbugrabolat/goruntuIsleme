@@ -10,5 +10,6 @@ Proje web tabanlı bir işlem yapma uygulaması olacaktır.
 Web kısmı django ile oluşturualcaktır.
 Gerekli tüm görüntü işleme fonksiyonları bireysel oluşturulacaktır. Hazır hiçbir fonksiyon kullanılmayacaktır.
 Tasarım modern olacaktır.
-Opencv kütüphanesinin fonksiyonları kullanılmayacaktır.
+Hiçbir kütüphanenin hazır fonksiyonları kullanılmayacaktır.
+Her fonksiyon sıfırdan oluşturulacaktır.
 Yapılacak islemler.mdc dosyasında mevcuttur.

@@ -1,4 +1,5 @@
 {% extends 'core/islemler/islem_base.html' %}
+{% load static %}
 
 {% block title %}Histogram İşlemleri - Görüntü İşleme{% endblock %}
 
@@ -37,20 +38,118 @@
 {% endblock %}
 
 {% block islem_js %}
-document.getElementById('islemTuru').addEventListener('change', function() {
+document.addEventListener('DOMContentLoaded', function() {
+    const islemTuru = document.getElementById('islemTuru');
     const germeParametreleri = document.getElementById('germeParametreleri');
-    germeParametreleri.style.display = this.value === 'germe' ? 'block' : 'none';
-});
+    const processButton = document.getElementById('processButton');
+    const imageInput = document.getElementById('imageInput');
+    const originalImageArea = document.querySelector('.original-image-area');
+    const processedImageArea = document.querySelector('.processed-image-area');
 
-document.getElementById('processButton').addEventListener('click', function() {
-    console.log('Histogram işlemi başlatıldı');
-    console.log('İşlem türü:', document.getElementById('islemTuru').value);
-    
-    if (document.getElementById('islemTuru').value === 'germe') {
-        console.log('Min değer:', document.getElementById('minDeger').value);
-        console.log('Max değer:', document.getElementById('maxDeger').value);
-    }
-    
-    console.log('Kanal bazlı işlem:', document.getElementById('kanalBazli').checked);
+    // İşlem türü değiştiğinde germe parametrelerini göster/gizle
+    islemTuru.addEventListener('change', function() {
+        germeParametreleri.style.display = this.value === 'germe' ? 'block' : 'none';
+    });
+
+    // Görüntü yüklendiğinde
+    imageInput.addEventListener('change', function(e) {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                // Orijinal görüntüyü göster
+                originalImageArea.innerHTML = `
+                    <div class="mb-3">
+                        <h6 class="text-center">Orijinal Görüntü</h6>
+                        <img src="${e.target.result}" class="img-fluid" alt="Orijinal Görüntü">
+                    </div>
+                    <div>
+                        <h6 class="text-center">Orijinal Histogram</h6>
+                        <div id="originalHistogram" class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Yükleniyor...</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                processButton.disabled = false;
+            }
+            
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // İşlem başlatma butonu tıklandığında
+    processButton.addEventListener('click', async function() {
+        if (!imageInput.files[0]) {
+            alert('Lütfen bir görüntü seçin');
+            return;
+        }
+
+        // İşlem başladığında butonu devre dışı bırak
+        processButton.disabled = true;
+        processButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> İşleniyor...';
+        
+        try {
+            const formData = new FormData();
+            formData.append('image', imageInput.files[0]);
+            formData.append('islemTuru', islemTuru.value);
+            formData.append('kanalBazli', document.getElementById('kanalBazli').checked);
+            
+            if (islemTuru.value === 'germe') {
+                formData.append('minDeger', document.getElementById('minDeger').value);
+                formData.append('maxDeger', document.getElementById('maxDeger').value);
+            }
+
+            console.log('Gönderilen parametreler:', {
+                islemTuru: islemTuru.value,
+                kanalBazli: document.getElementById('kanalBazli').checked,
+                minDeger: document.getElementById('minDeger').value,
+                maxDeger: document.getElementById('maxDeger').value
+            });
+
+            const response = await fetch('/histogram/isle/', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            console.log('Sunucu yanıtı:', data);
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Sunucu hatası oluştu');
+            }
+
+            if (data.success) {
+                // İşlenmiş görüntü ve histogramları göster
+                processedImageArea.innerHTML = `
+                    <div class="mb-3">
+                        <h6 class="text-center">İşlenmiş Görüntü</h6>
+                        <img src="${data.processed_image}" class="img-fluid" alt="İşlenmiş Görüntü">
+                    </div>
+                    <div>
+                        <h6 class="text-center">İşlenmiş Histogram</h6>
+                        <img src="${data.processed_histogram}" class="img-fluid" alt="İşlenmiş Histogram">
+                    </div>
+                `;
+                
+                // Orijinal histogramı güncelle
+                document.getElementById('originalHistogram').innerHTML = `
+                    <img src="${data.original_histogram}" class="img-fluid" alt="Orijinal Histogram">
+                `;
+            } else {
+                throw new Error(data.error || 'İşlem başarısız oldu');
+            }
+        } catch (error) {
+            console.error('Hata:', error);
+            alert('Hata: ' + error.message);
+            processedImageArea.innerHTML = '<div class="alert alert-danger">İşlem sırasında bir hata oluştu</div>';
+        } finally {
+            // İşlem bittiğinde butonu tekrar aktif et
+            processButton.disabled = false;
+            processButton.innerHTML = '<i class="bi bi-play-circle me-2"></i>İşlemi Başlat';
+        }
+    });
 });
 {% endblock %} 

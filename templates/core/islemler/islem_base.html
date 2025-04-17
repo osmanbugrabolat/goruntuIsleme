@@ -104,13 +104,19 @@
                         <div class="col-md-6">
                             <h6 class="text-center mb-3">Orijinal Görüntü</h6>
                             <div class="original-image-area text-center py-5 border rounded">
-                                <i class="bi bi-image display-1 text-gray-300"></i>
+                                <img id="originalImage" style="max-width: 100%; display: none;">
+                                <div id="originalPlaceholder">
+                                    <i class="bi bi-image display-1 text-gray-300"></i>
+                                </div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <h6 class="text-center mb-3">İşlenmiş Görüntü</h6>
                             <div class="processed-image-area text-center py-5 border rounded">
-                                <i class="bi bi-image-alt display-1 text-gray-300"></i>
+                                <img id="processedImage" style="max-width: 100%; display: none;">
+                                <div id="processedPlaceholder">
+                                    <i class="bi bi-image-alt display-1 text-gray-300"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -122,18 +128,34 @@
 
 {% block extra_js %}
 <script>
-document.getElementById('imageInput').addEventListener('change', function(e) {
+// Temel görüntü işleme fonksiyonları
+const imageInput = document.getElementById('imageInput');
+const imagePreview = document.getElementById('imagePreview');
+const processButton = document.getElementById('processButton');
+const resetButton = document.getElementById('resetButton');
+const originalImage = document.getElementById('originalImage');
+const processedImage = document.getElementById('processedImage');
+const originalPlaceholder = document.getElementById('originalPlaceholder');
+const processedPlaceholder = document.getElementById('processedPlaceholder');
+
+// Görüntü yükleme işlemi
+imageInput.addEventListener('change', function(e) {
     if (e.target.files && e.target.files[0]) {
         const file = e.target.files[0];
         const reader = new FileReader();
         
         reader.onload = function(e) {
-            const preview = document.getElementById('imagePreview');
-            preview.innerHTML = `<img src="${e.target.result}" class="img-fluid" alt="Yüklenen Görüntü">`;
+            // Önizleme alanını güncelle
+            imagePreview.innerHTML = `<img src="${e.target.result}" class="img-fluid" alt="Yüklenen Görüntü">`;
+            
+            // Orijinal görüntüyü göster
+            originalImage.src = e.target.result;
+            originalImage.style.display = 'block';
+            originalPlaceholder.style.display = 'none';
             
             // Butonları aktif et
-            document.getElementById('processButton').disabled = false;
-            document.getElementById('resetButton').disabled = false;
+            processButton.disabled = false;
+            resetButton.disabled = false;
             
             // Görüntü bilgilerini güncelle
             document.getElementById('imageSize').textContent = formatBytes(file.size);
@@ -151,6 +173,33 @@ document.getElementById('imageInput').addEventListener('change', function(e) {
     }
 });
 
+// Sıfırlama işlemi
+resetButton.addEventListener('click', function() {
+    // Formu sıfırla
+    imageInput.value = '';
+    
+    // Önizlemeyi sıfırla
+    imagePreview.innerHTML = `
+        <i class="bi bi-image display-1 text-gray-300 mb-4"></i>
+        <h4 class="text-muted">Önizleme</h4>
+    `;
+    
+    // Görüntüleri sıfırla
+    originalImage.style.display = 'none';
+    originalPlaceholder.style.display = 'block';
+    processedImage.style.display = 'none';
+    processedPlaceholder.style.display = 'block';
+    
+    // Butonları devre dışı bırak
+    this.disabled = true;
+    processButton.disabled = true;
+    
+    // Görüntü bilgilerini sıfırla
+    document.getElementById('imageSize').textContent = '-';
+    document.getElementById('imageFormat').textContent = '-';
+    document.getElementById('imageResolution').textContent = '-';
+});
+
 function formatBytes(bytes, decimals = 2) {
     if (bytes === 0) return '0 Bytes';
     
@@ -162,26 +211,6 @@ function formatBytes(bytes, decimals = 2) {
     
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
-
-document.getElementById('resetButton').addEventListener('click', function() {
-    // Formu sıfırla
-    document.getElementById('imageInput').value = '';
-    
-    // Önizlemeyi sıfırla
-    document.getElementById('imagePreview').innerHTML = `
-        <i class="bi bi-image display-1 text-gray-300 mb-4"></i>
-        <h4 class="text-muted">Önizleme</h4>
-    `;
-    
-    // Butonları devre dışı bırak
-    this.disabled = true;
-    document.getElementById('processButton').disabled = true;
-    
-    // Görüntü bilgilerini sıfırla
-    document.getElementById('imageSize').textContent = '-';
-    document.getElementById('imageFormat').textContent = '-';
-    document.getElementById('imageResolution').textContent = '-';
-});
 
 {% block islem_js %}{% endblock %}
 </script>

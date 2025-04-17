@@ -37,12 +37,99 @@
 {% endblock %}
 
 {% block islem_js %}
-document.getElementById('processButton').addEventListener('click', function() {
-    console.log('Görüntü kırpma işlemi başlatıldı');
-    console.log('Başlangıç X:', document.getElementById('startX').value);
-    console.log('Başlangıç Y:', document.getElementById('startY').value);
-    console.log('Genişlik:', document.getElementById('width').value);
-    console.log('Yükseklik:', document.getElementById('height').value);
-    console.log('En-Boy oranı korunacak:', document.getElementById('aspectRatio').checked);
+// Görüntü seçildiğinde orijinal görüntüyü göster ve maksimum değerleri ayarla
+document.getElementById('imageInput').addEventListener('change', function() {
+    if (this.files && this.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            // Orijinal görüntüyü göster
+            const originalArea = document.querySelector('.original-image-area');
+            originalArea.innerHTML = `<img src="${e.target.result}" class="img-fluid" alt="Orijinal görüntü">`;
+            
+            // Görüntü boyutlarını al ve input sınırlarını ayarla
+            const img = new Image();
+            img.onload = function() {
+                document.getElementById('width').max = img.width;
+                document.getElementById('height').max = img.height;
+                document.getElementById('startX').max = img.width - 1;
+                document.getElementById('startY').max = img.height - 1;
+                
+                // Varsayılan değerleri güncelle
+                document.getElementById('width').value = Math.min(100, img.width);
+                document.getElementById('height').value = Math.min(100, img.height);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(this.files[0]);
+    }
+});
+
+document.getElementById('processButton').addEventListener('click', async function() {
+    try {
+        // İşlenmiş görüntü alanına yükleme göstergesini ekle
+        const processedArea = document.querySelector('.processed-image-area');
+        processedArea.innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Yükleniyor...</span>
+                </div>
+                <div class="mt-2">Görüntü İşleniyor...</div>
+            </div>
+        `;
+        
+        // Görüntüyü al
+        const imageInput = document.getElementById('imageInput');
+        if (!imageInput.files[0]) {
+            alert('Lütfen bir görüntü seçin');
+            return;
+        }
+        
+        // Parametreleri al
+        const startX = parseInt(document.getElementById('startX').value);
+        const startY = parseInt(document.getElementById('startY').value);
+        const width = parseInt(document.getElementById('width').value);
+        const height = parseInt(document.getElementById('height').value);
+        const aspectRatio = document.getElementById('aspectRatio').checked;
+        
+        // Görüntüyü base64'e dönüştür
+        const base64Image = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.readAsDataURL(imageInput.files[0]);
+        });
+        
+        // API'ye gönder
+        const response = await fetch('/goruntu-kirpma/isle/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                image: base64Image,
+                startX: startX,
+                startY: startY,
+                width: width,
+                height: height,
+                aspectRatio: aspectRatio
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Sonuç görüntüsünü göster
+            processedArea.innerHTML = `<img src="${data.image}" class="img-fluid" alt="İşlenmiş görüntü">`;
+        } else {
+            alert('Hata: ' + data.error);
+            // Hata durumunda varsayılan ikonu göster
+            processedArea.innerHTML = `<i class="bi bi-image-alt display-1 text-gray-300"></i>`;
+        }
+    } catch (error) {
+        alert('İşlem sırasında bir hata oluştu: ' + error.message);
+        // Hata durumunda varsayılan ikonu göster
+        const processedArea = document.querySelector('.processed-image-area');
+        processedArea.innerHTML = `<i class="bi bi-image-alt display-1 text-gray-300"></i>`;
+    }
 });
 {% endblock %} 
