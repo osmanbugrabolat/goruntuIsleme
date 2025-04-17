@@ -40,107 +40,130 @@
 </div>
 {% endblock %}
 
-{% block islem_js %}
-const kontrastYontemi = document.getElementById('kontrastYontemi');
-const dogrusalParametreler = document.getElementById('dogrusalParametreler');
-const gammaParametreler = document.getElementById('gammaParametreler');
-const kontrastFaktor = document.getElementById('kontrastFaktor');
-const gammaFaktor = document.getElementById('gammaFaktor');
-const kontrastDeger = document.getElementById('kontrastDeger');
-const gammaDeger = document.getElementById('gammaDeger');
-const kanalBazli = document.getElementById('kanalBazli');
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const kontrastYontemi = document.getElementById('kontrastYontemi');
+    const dogrusalParametreler = document.getElementById('dogrusalParametreler');
+    const gammaParametreler = document.getElementById('gammaParametreler');
+    const kontrastFaktor = document.getElementById('kontrastFaktor');
+    const gammaFaktor = document.getElementById('gammaFaktor');
+    const kontrastDeger = document.getElementById('kontrastDeger');
+    const gammaDeger = document.getElementById('gammaDeger');
+    const kanalBazli = document.getElementById('kanalBazli');
+    const processButton = document.getElementById('processButton');
+    const imageInput = document.getElementById('imageInput');
+    const originalImage = document.getElementById('originalImage');
+    const processedImage = document.getElementById('processedImage');
+    const originalPlaceholder = document.getElementById('originalPlaceholder');
+    const processedPlaceholder = document.getElementById('processedPlaceholder');
 
-// Görüntü yükleme işleyicisi
-imageInput.addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (file) {
-        // Seçilen görüntüyü göster
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            originalImage.src = e.target.result;
-            originalImage.style.display = 'block';
-            originalPlaceholder.style.display = 'none';
-            
-            // İşlem butonunu aktif et
+    // CSRF token al
+    const csrftoken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+    console.log('CSRF Token:', csrftoken); // Debug için
+
+    // Görüntü yükleme işleyicisi
+    imageInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            console.log('Seçilen dosya:', file.name); // Debug için
+            // Seçilen görüntüyü göster
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                originalImage.src = e.target.result;
+                originalImage.style.display = 'block';
+                originalPlaceholder.style.display = 'none';
+                
+                // İşlem butonunu aktif et
+                processButton.disabled = false;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    kontrastYontemi.addEventListener('change', function() {
+        dogrusalParametreler.style.display = this.value === 'dogrusal' ? 'block' : 'none';
+        gammaParametreler.style.display = this.value === 'gamma' ? 'block' : 'none';
+    });
+
+    kontrastFaktor.addEventListener('input', function() {
+        kontrastDeger.textContent = this.value;
+    });
+
+    gammaFaktor.addEventListener('input', function() {
+        gammaDeger.textContent = this.value;
+    });
+
+    processButton.addEventListener('click', async function() {
+        if (!imageInput.files[0]) {
+            alert('Lütfen bir görüntü seçin');
+            return;
+        }
+
+        // İşlem başladığında butonu devre dışı bırak
+        processButton.disabled = true;
+        processButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> İşleniyor...';
+
+        try {
+            // Form verilerini oluştur
+            const formData = new FormData();
+            formData.append('image', imageInput.files[0]);
+            formData.append('yontem', kontrastYontemi.value);
+            formData.append('kontrastFaktor', kontrastFaktor.value);
+            formData.append('gammaFaktor', gammaFaktor.value);
+            formData.append('kanalBazli', kanalBazli.checked);
+
+            // Debug için konsola yazdır
+            console.log('Gönderilen parametreler:', {
+                yontem: kontrastYontemi.value,
+                kontrastFaktor: kontrastFaktor.value,
+                gammaFaktor: gammaFaktor.value,
+                kanalBazli: kanalBazli.checked
+            });
+
+            // İşlemi gerçekleştir
+            const response = await fetch('/kontrast/isle/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken
+                },
+                body: formData,
+                credentials: 'same-origin'  // CSRF için önemli
+            });
+
+            console.log('Sunucu yanıtı status:', response.status);
+            const data = await response.json();
+            console.log('Sunucu yanıtı data:', data);
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Sunucu hatası oluştu');
+            }
+
+            if (data.success) {
+                // İşlenmiş görüntüyü göster
+                processedImage.src = data.image;
+                processedImage.style.display = 'block';
+                processedPlaceholder.style.display = 'none';
+            } else {
+                throw new Error(data.error || 'İşlem başarısız oldu');
+            }
+        } catch (error) {
+            console.error('Hata:', error);
+            alert('Hata: ' + error.message);
+            processedImage.style.display = 'none';
+            processedPlaceholder.style.display = 'block';
+            processedPlaceholder.innerHTML = '<div class="alert alert-danger">İşlem sırasında bir hata oluştu</div>';
+        } finally {
+            // İşlem bittiğinde butonu tekrar aktif et
             processButton.disabled = false;
-        };
-        reader.readAsDataURL(file);
-    }
-});
-
-kontrastYontemi.addEventListener('change', function() {
-    dogrusalParametreler.style.display = this.value === 'dogrusal' ? 'block' : 'none';
-    gammaParametreler.style.display = this.value === 'gamma' ? 'block' : 'none';
-});
-
-kontrastFaktor.addEventListener('input', function() {
-    kontrastDeger.textContent = this.value;
-});
-
-gammaFaktor.addEventListener('input', function() {
-    gammaDeger.textContent = this.value;
-});
-
-processButton.addEventListener('click', async function() {
-    if (!imageInput.files[0]) {
-        alert('Lütfen bir görüntü seçin');
-        return;
-    }
-
-    // İşlem başladığında loading göster
-    const loadingOverlay = document.createElement('div');
-    loadingOverlay.className = 'loading-overlay';
-    loadingOverlay.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Yükleniyor...</span></div>';
-    document.body.appendChild(loadingOverlay);
-
-    try {
-        // Form verilerini oluştur
-        const formData = new FormData();
-        formData.append('image', imageInput.files[0]);
-        formData.append('yontem', kontrastYontemi.value);
-        formData.append('kontrastFaktor', kontrastFaktor.value);
-        formData.append('gammaFaktor', gammaFaktor.value);
-        formData.append('kanalBazli', kanalBazli.checked);
-
-        // Debug için konsola yazdır
-        console.log('Kontrast ayarlama işlemi başlatıldı');
-        console.log('Kontrast yöntemi:', kontrastYontemi.value);
-        console.log('Kanal bazlı işlem:', kanalBazli.checked);
-        console.log('Kontrast faktörü:', kontrastFaktor.value);
-        console.log('Gamma değeri:', gammaFaktor.value);
-
-        // İşlemi gerçekleştir
-        const response = await fetch('/kontrast/isle/', {
-            method: 'POST',
-            body: formData
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.error || 'İşlem başarısız oldu');
+            processButton.innerHTML = '<i class="bi bi-play-circle me-2"></i>İşlemi Başlat';
         }
-
-        if (data.success) {
-            // İşlenmiş görüntüyü göster
-            processedImage.src = data.image;
-            processedImage.style.display = 'block';
-            processedPlaceholder.style.display = 'none';
-        } else {
-            throw new Error(data.error || 'Bilinmeyen bir hata oluştu');
-        }
-    } catch (error) {
-        console.error('Hata:', error);
-        alert('İşlem sırasında bir hata oluştu: ' + error.message);
-    } finally {
-        // Loading overlay'i kaldır
-        document.body.removeChild(loadingOverlay);
-    }
+    });
 });
+</script>
 
-// CSS stil ekle
-const style = document.createElement('style');
-style.textContent = `
+<style>
 .loading-overlay {
     position: fixed;
     top: 0;
@@ -153,6 +176,5 @@ style.textContent = `
     align-items: center;
     z-index: 9999;
 }
-`;
-document.head.appendChild(style);
+</style>
 {% endblock %} 

@@ -36,16 +36,15 @@
 </div>
 {% endblock %}
 
-{% block islem_js %}
+{% block extra_js %}
+{{ block.super }}
+
+<script>
 // Görüntü seçildiğinde orijinal görüntüyü göster ve maksimum değerleri ayarla
 document.getElementById('imageInput').addEventListener('change', function() {
     if (this.files && this.files[0]) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            // Orijinal görüntüyü göster
-            const originalArea = document.querySelector('.original-image-area');
-            originalArea.innerHTML = `<img src="${e.target.result}" class="img-fluid" alt="Orijinal görüntü">`;
-            
             // Görüntü boyutlarını al ve input sınırlarını ayarla
             const img = new Image();
             img.onload = function() {
@@ -64,72 +63,79 @@ document.getElementById('imageInput').addEventListener('change', function() {
     }
 });
 
-document.getElementById('processButton').addEventListener('click', async function() {
+// İşlem butonuna tıklandığında
+processButton.addEventListener('click', async function() {
+    if (!imageInput.files[0]) {
+        alert('Lütfen bir görüntü seçin');
+        return;
+    }
+
+    // İşlem başladığında butonu devre dışı bırak
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>İşlem Yapılıyor...';
+
     try {
-        // İşlenmiş görüntü alanına yükleme göstergesini ekle
-        const processedArea = document.querySelector('.processed-image-area');
-        processedArea.innerHTML = `
-            <div class="text-center">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Yükleniyor...</span>
-                </div>
-                <div class="mt-2">Görüntü İşleniyor...</div>
-            </div>
-        `;
+        // Görüntüyü base64'e çevir
+        const reader = new FileReader();
+        reader.readAsDataURL(imageInput.files[0]);
         
-        // Görüntüyü al
-        const imageInput = document.getElementById('imageInput');
-        if (!imageInput.files[0]) {
-            alert('Lütfen bir görüntü seçin');
-            return;
-        }
-        
-        // Parametreleri al
-        const startX = parseInt(document.getElementById('startX').value);
-        const startY = parseInt(document.getElementById('startY').value);
-        const width = parseInt(document.getElementById('width').value);
-        const height = parseInt(document.getElementById('height').value);
-        const aspectRatio = document.getElementById('aspectRatio').checked;
-        
-        // Görüntüyü base64'e dönüştür
-        const base64Image = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = (e) => resolve(e.target.result);
-            reader.readAsDataURL(imageInput.files[0]);
-        });
-        
-        // API'ye gönder
-        const response = await fetch('/goruntu-kirpma/isle/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            },
-            body: JSON.stringify({
-                image: base64Image,
-                startX: startX,
-                startY: startY,
-                width: width,
-                height: height,
-                aspectRatio: aspectRatio
-            })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            // Sonuç görüntüsünü göster
-            processedArea.innerHTML = `<img src="${data.image}" class="img-fluid" alt="İşlenmiş görüntü">`;
-        } else {
-            alert('Hata: ' + data.error);
-            // Hata durumunda varsayılan ikonu göster
-            processedArea.innerHTML = `<i class="bi bi-image-alt display-1 text-gray-300"></i>`;
-        }
+        reader.onload = async function() {
+            try {
+                // İşlem parametrelerini hazırla
+                const data = {
+                    image: reader.result,
+                    startX: parseInt(document.getElementById('startX').value),
+                    startY: parseInt(document.getElementById('startY').value),
+                    width: parseInt(document.getElementById('width').value),
+                    height: parseInt(document.getElementById('height').value),
+                    aspectRatio: document.getElementById('aspectRatio').checked
+                };
+                
+                // CSRF token al
+                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                
+                // İşlemi başlat
+                const response = await fetch('/goruntu-kirpma/isle/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.text();
+                    throw new Error(errorData || 'İşlem sırasında bir hata oluştu');
+                }
+
+                const responseData = await response.json();
+
+                // İşlenmiş görüntüyü göster
+                processedImage.src = responseData.image;
+                processedImage.style.display = 'block';
+                processedPlaceholder.style.display = 'none';
+
+                // İşlem başarılı olduğunda butonu tekrar aktif et
+                processButton.disabled = false;
+                processButton.innerHTML = '<i class="bi bi-play-circle me-2"></i>İşlemi Başlat';
+
+            } catch (error) {
+                console.error('Hata:', error);
+                alert('Hata: ' + error.message);
+                // Hata durumunda butonu tekrar aktif et
+                processButton.disabled = false;
+                processButton.innerHTML = '<i class="bi bi-play-circle me-2"></i>İşlemi Başlat';
+            }
+        };
+
     } catch (error) {
-        alert('İşlem sırasında bir hata oluştu: ' + error.message);
-        // Hata durumunda varsayılan ikonu göster
-        const processedArea = document.querySelector('.processed-image-area');
-        processedArea.innerHTML = `<i class="bi bi-image-alt display-1 text-gray-300"></i>`;
+        console.error('Hata:', error);
+        alert('Hata: ' + error.message);
+        // Hata durumunda butonu tekrar aktif et
+        this.disabled = false;
+        this.innerHTML = '<i class="bi bi-play-circle me-2"></i>İşlemi Başlat';
     }
 });
+</script>
 {% endblock %} 

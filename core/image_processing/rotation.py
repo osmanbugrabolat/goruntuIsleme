@@ -85,19 +85,26 @@ def goruntu_dondur(image: np.ndarray, aci: float, interpolasyon: str = 'bilinear
     Returns:
         np.ndarray: Döndürülmüş görüntü
     """
+    # Debug için giriş parametrelerini yazdır
+    print(f"Döndürme fonksiyonu parametreleri:")
+    print(f"Görüntü boyutu: {image.shape}")
+    print(f"Açı: {aci}")
+    print(f"İnterpolasyon: {interpolasyon}")
+    print(f"Boyut korunacak mı: {boyut_koru}")
+    
     # RGBA görüntüyü RGB'ye dönüştür
     if len(image.shape) > 2 and image.shape[2] == 4:
         image = image[:, :, :3]
     
     # Radyana çevir
-    theta = radians(aci)
+    theta = np.radians(aci)
     
     height, width = image.shape[:2]
     is_rgb = len(image.shape) > 2
     
     # Döndürme matrisi
-    cos_theta = cos(theta)
-    sin_theta = sin(theta)
+    cos_theta = np.cos(theta)
+    sin_theta = np.sin(theta)
     
     if boyut_koru:
         # Orijinal boyutları koru
@@ -135,6 +142,10 @@ def goruntu_dondur(image: np.ndarray, aci: float, interpolasyon: str = 'bilinear
     # Geçerli koordinatları bul
     valid_coords = (src_x >= 0) & (src_x < width - 1) & (src_y >= 0) & (src_y < height - 1)
     y_valid, x_valid = np.where(valid_coords)
+    
+    # Debug için işlem bilgilerini yazdır
+    print(f"Geçerli koordinat sayısı: {len(y_valid)}")
+    print(f"Çıktı görüntü boyutu: {output.shape}")
     
     # Sadece geçerli koordinatlar için interpolasyon uygula
     for i in range(len(y_valid)):

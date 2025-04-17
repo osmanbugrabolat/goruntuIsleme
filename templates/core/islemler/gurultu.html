@@ -52,71 +52,133 @@
 </div>
 {% endblock %}
 
-{% block islem_js %}
-// İşlem parametreleri için gerekli elementleri seç
-const islemTuru = document.getElementById('islemTuru');
-const gurultuEklemeParametreleri = document.getElementById('gurultuEklemeParametreleri');
-const gurultuTemizlemeParametreleri = document.getElementById('gurultuTemizlemeParametreleri');
-const gurultuYogunlugu = document.getElementById('gurultuYogunlugu');
-const yogunlukDeger = document.getElementById('yogunlukDeger');
-const filtreBoyutu = document.getElementById('filtreBoyutu');
-const boyutDeger = document.getElementById('boyutDeger');
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // DOM elementlerini seç
+    const islemTuru = document.getElementById('islemTuru');
+    const gurultuEklemeParametreleri = document.getElementById('gurultuEklemeParametreleri');
+    const gurultuTemizlemeParametreleri = document.getElementById('gurultuTemizlemeParametreleri');
+    const gurultuYogunlugu = document.getElementById('gurultuYogunlugu');
+    const yogunlukDeger = document.getElementById('yogunlukDeger');
+    const filtreBoyutu = document.getElementById('filtreBoyutu');
+    const boyutDeger = document.getElementById('boyutDeger');
+    const processButton = document.getElementById('processButton');
+    const imageInput = document.getElementById('imageInput');
+    const originalImage = document.getElementById('originalImage');
+    const processedImage = document.getElementById('processedImage');
+    const originalPlaceholder = document.getElementById('originalPlaceholder');
+    const processedPlaceholder = document.getElementById('processedPlaceholder');
 
-// İşlem türü değiştiğinde parametreleri güncelle
-islemTuru.addEventListener('change', function() {
-    gurultuEklemeParametreleri.style.display = this.value === 'ekle' ? 'block' : 'none';
-    gurultuTemizlemeParametreleri.style.display = this.value === 'temizle' ? 'block' : 'none';
-});
+    // CSRF token al
+    const csrftoken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+    console.log('CSRF Token:', csrftoken); // Debug için
 
-// Yoğunluk değeri değiştiğinde göstergeyi güncelle
-gurultuYogunlugu.addEventListener('input', function() {
-    yogunlukDeger.textContent = this.value + '%';
-});
+    // İşlem türü değiştiğinde parametreleri güncelle
+    islemTuru.addEventListener('change', function() {
+        gurultuEklemeParametreleri.style.display = this.value === 'ekle' ? 'block' : 'none';
+        gurultuTemizlemeParametreleri.style.display = this.value === 'temizle' ? 'block' : 'none';
+    });
 
-// Filtre boyutu değiştiğinde göstergeyi güncelle
-filtreBoyutu.addEventListener('input', function() {
-    boyutDeger.textContent = `${this.value}x${this.value}`;
-});
+    // Yoğunluk değeri değiştiğinde göstergeyi güncelle
+    gurultuYogunlugu.addEventListener('input', function() {
+        yogunlukDeger.textContent = this.value + '%';
+    });
 
-// İşlem başlat butonuna tıklandığında
-processButton.addEventListener('click', async function() {
-    try {
-        const formData = new FormData();
-        formData.append('image', imageInput.files[0]);
-        formData.append('islem_turu', islemTuru.value);
-        
-        if (islemTuru.value === 'ekle') {
-            formData.append('gurultu_turu', document.getElementById('gurultuTuru').value);
-            formData.append('yogunluk', gurultuYogunlugu.value);
-        } else {
-            formData.append('filtre_turu', document.getElementById('filtreTuru').value);
-            formData.append('filtre_boyutu', filtreBoyutu.value);
+    // Filtre boyutu değiştiğinde göstergeyi güncelle
+    filtreBoyutu.addEventListener('input', function() {
+        boyutDeger.textContent = `${this.value}x${this.value}`;
+    });
+
+    // Görüntü yükleme işleyicisi
+    imageInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            console.log('Seçilen dosya:', file.name); // Debug için
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                originalImage.src = e.target.result;
+                originalImage.style.display = 'block';
+                originalPlaceholder.style.display = 'none';
+                processButton.disabled = false;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // İşlem başlat butonuna tıklandığında
+    processButton.addEventListener('click', async function() {
+        if (!imageInput.files[0]) {
+            alert('Lütfen bir görüntü seçin');
+            return;
         }
 
-        const response = await fetch('/gurultu/isle/', {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            },
-            body: formData
-        });
+        // İşlem başladığında butonu devre dışı bırak
+        processButton.disabled = true;
+        processButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> İşleniyor...';
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        try {
+            const formData = new FormData();
+            formData.append('image', imageInput.files[0]);
+            formData.append('islem_turu', islemTuru.value);
+            
+            if (islemTuru.value === 'ekle') {
+                formData.append('gurultu_turu', document.getElementById('gurultuTuru').value);
+                formData.append('yogunluk', gurultuYogunlugu.value);
+            } else {
+                formData.append('filtre_turu', document.getElementById('filtreTuru').value);
+                formData.append('filtre_boyutu', filtreBoyutu.value);
+            }
 
-        const result = await response.json();
-        
-        if (result.success) {
-            processedImage.src = `data:image/jpeg;base64,${result.processed_image}`;
-            processedImage.style.display = 'block';
-            processedPlaceholder.style.display = 'none';
-        } else {
-            alert('İşlem sırasında bir hata oluştu: ' + result.error);
+            // Debug için konsola yazdır
+            console.log('Gönderilen parametreler:', {
+                islem_turu: islemTuru.value,
+                ...(islemTuru.value === 'ekle' ? {
+                    gurultu_turu: document.getElementById('gurultuTuru').value,
+                    yogunluk: gurultuYogunlugu.value
+                } : {
+                    filtre_turu: document.getElementById('filtreTuru').value,
+                    filtre_boyutu: filtreBoyutu.value
+                })
+            });
+
+            const response = await fetch('/gurultu/isle/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken
+                },
+                body: formData,
+                credentials: 'same-origin'  // CSRF için önemli
+            });
+
+            console.log('Sunucu yanıtı status:', response.status);
+            const data = await response.json();
+            console.log('Sunucu yanıtı data:', data);
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Sunucu hatası oluştu');
+            }
+
+            if (data.success) {
+                processedImage.src = data.image;
+                processedImage.style.display = 'block';
+                processedPlaceholder.style.display = 'none';
+            } else {
+                throw new Error(data.error || 'İşlem başarısız oldu');
+            }
+        } catch (error) {
+            console.error('Hata:', error);
+            alert('Hata: ' + error.message);
+            processedImage.style.display = 'none';
+            processedPlaceholder.style.display = 'block';
+            processedPlaceholder.innerHTML = '<div class="alert alert-danger">İşlem sırasında bir hata oluştu</div>';
+        } finally {
+            // İşlem bittiğinde butonu tekrar aktif et
+            processButton.disabled = false;
+            processButton.innerHTML = '<i class="bi bi-play-circle me-2"></i>İşlemi Başlat';
         }
-    } catch (error) {
-        console.error('Hata:', error);
-        alert('İşlem sırasında bir hata oluştu.');
-    }
+    });
 });
+</script>
 {% endblock %} 

@@ -37,7 +37,9 @@
 </div>
 {% endblock %}
 
-{% block islem_js %}
+{% block extra_js %}
+{{ block.super }}
+<script>
 document.addEventListener('DOMContentLoaded', function() {
     const islemTuru = document.getElementById('islemTuru');
     const germeParametreleri = document.getElementById('germeParametreleri');
@@ -45,6 +47,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const imageInput = document.getElementById('imageInput');
     const originalImageArea = document.querySelector('.original-image-area');
     const processedImageArea = document.querySelector('.processed-image-area');
+
+    // CSRF token al
+    const csrftoken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+    console.log('CSRF Token:', csrftoken); // Debug için
 
     // İşlem türü değiştiğinde germe parametrelerini göster/gizle
     islemTuru.addEventListener('change', function() {
@@ -55,6 +61,7 @@ document.addEventListener('DOMContentLoaded', function() {
     imageInput.addEventListener('change', function(e) {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
+            console.log('Seçilen dosya:', file.name); // Debug için
             const reader = new FileReader();
             
             reader.onload = function(e) {
@@ -105,17 +112,22 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Gönderilen parametreler:', {
                 islemTuru: islemTuru.value,
                 kanalBazli: document.getElementById('kanalBazli').checked,
-                minDeger: document.getElementById('minDeger').value,
-                maxDeger: document.getElementById('maxDeger').value
+                minDeger: document.getElementById('minDeger')?.value,
+                maxDeger: document.getElementById('maxDeger')?.value
             });
 
             const response = await fetch('/histogram/isle/', {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'X-CSRFToken': csrftoken
+                },
+                body: formData,
+                credentials: 'same-origin'  // CSRF için önemli
             });
 
+            console.log('Sunucu yanıtı status:', response.status);
             const data = await response.json();
-            console.log('Sunucu yanıtı:', data);
+            console.log('Sunucu yanıtı data:', data);
 
             if (!response.ok) {
                 throw new Error(data.error || 'Sunucu hatası oluştu');
@@ -152,4 +164,5 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+</script>
 {% endblock %} 

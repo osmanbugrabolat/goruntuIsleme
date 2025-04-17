@@ -59,79 +59,103 @@ def encode_image_base64(image_data: np.ndarray) -> str:
         raise ValueError(f"Görüntü encode edilemedi: {str(e)}")
 
 def gri_donusum(request):
-    if request.method == 'POST' and request.FILES.get('image'):
-        try:
-            # Gönderilen görüntüyü oku
-            image_file = request.FILES['image']
-            image_array = read_image_file(image_file)
-            
-            # Dönüşüm yöntemini al
-            method = request.POST.get('method', 'ortalama')
-            
-            # Gri dönüşümü uygula
-            gray_image = rgb_to_gray(image_array, method)
-            
-            # İşlenmiş görüntüyü base64 formatına dönüştür
-            processed_image = encode_image_base64(gray_image)
-            
-            return JsonResponse({
-                'success': True,
-                'processed_image': processed_image
-            })
-            
-        except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'error': str(e)
-            })
-    
+    """Gri dönüşüm sayfasını render eder"""
     return render(request, 'core/islemler/gri_donusum.html')
+
+@csrf_exempt
+def gri_donusum_isle_view(request):
+    """Gri dönüşüm işlemini gerçekleştiren view fonksiyonu"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST isteği gerekli'}, status=400)
+    
+    try:
+        # Görüntüyü al
+        if 'image' not in request.FILES:
+            return JsonResponse({'error': 'Görüntü dosyası gerekli'}, status=400)
+        
+        # Dönüşüm yöntemini al
+        method = request.POST.get('method', 'ortalama')
+        
+        # Debug için parametre değerlerini yazdır
+        print(f"Gri dönüşüm parametreleri:")
+        print(f"Yöntem: {method}")
+        
+        # Görüntüyü numpy dizisine dönüştür
+        image = read_image_file(request.FILES['image'])
+        
+        if image is None:
+            return JsonResponse({'error': 'Görüntü okunamadı'}, status=400)
+        
+        # Gri dönüşümü uygula
+        gray_image = rgb_to_gray(image, method)
+        
+        # Sonucu base64'e dönüştür
+        processed_image = encode_image_base64(gray_image)
+        
+        return JsonResponse({
+            'success': True,
+            'image': processed_image
+        })
+        
+    except Exception as e:
+        print(f"Hata oluştu: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'error': str(e)}, status=400)
 
 def anasayfa(request):
     return render(request, 'core/anasayfa.html')
 
-@require_http_methods(["GET", "POST"])
 def binary_donusum(request):
-    if request.method == "POST":
-        try:
-            # Gelen görüntüyü al
-            image_data = request.FILES.get('image')
-            if not image_data:
-                return JsonResponse({'error': 'Görüntü bulunamadı'}, status=400)
-            
-            # Parametreleri al
-            threshold = int(request.POST.get('esikDegeri', 127))
-            method = request.POST.get('esiklemeYontemi', 'basit')
-            
-            # Debug için parametre değerlerini yazdır
-            print(f"Alınan parametreler: threshold={threshold}, method={method}")
-            
-            # Görüntüyü numpy dizisine çevir
-            image_array = read_image_file(image_data)
-            
-            # Binary dönüşümü uygula
-            processed_image = binary_donusum_isle(
-                image=image_array,
-                threshold=threshold,
-                method=method
-            )
-            
-            # Sonuç görüntüsünü base64'e çevir
-            result_image = Image.fromarray(processed_image)
-            buffer = BytesIO()
-            result_image.save(buffer, format='PNG')
-            base64_image = base64.b64encode(buffer.getvalue()).decode('utf-8')
-            
-            return JsonResponse({
-                'processed_image': f'data:image/png;base64,{base64_image}',
-                'message': 'Binary dönüşüm başarıyla uygulandı'
-            })
-            
-        except Exception as e:
-            print(f"Hata oluştu: {str(e)}")  # Hata mesajını sunucu konsoluna yazdır
-            return JsonResponse({'error': str(e)}, status=400)
-    
+    """Binary dönüşüm sayfasını render eder"""
     return render(request, 'core/islemler/binary_donusum.html')
+
+@csrf_exempt
+def binary_donusum_isle_view(request):
+    """Binary dönüşüm işlemini gerçekleştiren view fonksiyonu"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST isteği gerekli'}, status=400)
+    
+    try:
+        # Görüntüyü al
+        if 'image' not in request.FILES:
+            return JsonResponse({'error': 'Görüntü dosyası gerekli'}, status=400)
+        
+        # Parametreleri al
+        threshold = int(request.POST.get('esikDegeri', 127))
+        method = request.POST.get('esiklemeYontemi', 'basit')
+        
+        # Debug için parametre değerlerini yazdır
+        print(f"Binary dönüşüm parametreleri:")
+        print(f"Eşik değeri: {threshold}")
+        print(f"Yöntem: {method}")
+        
+        # Görüntüyü numpy dizisine dönüştür
+        image = read_image_file(request.FILES['image'])
+        
+        if image is None:
+            return JsonResponse({'error': 'Görüntü okunamadı'}, status=400)
+        
+        # Binary dönüşümü uygula
+        processed_image = binary_donusum_isle(
+            image=image,
+            threshold=threshold,
+            method=method
+        )
+        
+        # Sonucu base64'e dönüştür
+        processed_image = encode_image_base64(processed_image)
+        
+        return JsonResponse({
+            'success': True,
+            'image': processed_image
+        })
+        
+    except Exception as e:
+        print(f"Hata oluştu: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'error': str(e)}, status=400)
 
 @csrf_exempt
 def goruntu_dondurme_isle(request):
@@ -139,6 +163,12 @@ def goruntu_dondurme_isle(request):
         try:
             # JSON verisini al
             data = json.loads(request.body)
+            
+            # Debug için parametre değerlerini yazdır
+            print(f"Gelen parametreler:")
+            print(f"Açı: {data.get('aci')}")
+            print(f"İnterpolasyon: {data.get('interpolasyon')}")
+            print(f"Boyut koru: {data.get('boyutKoru')}")
             
             # Base64 görüntüyü numpy dizisine dönüştür
             image_data = base64.b64decode(data['image'].split(',')[1])
@@ -150,6 +180,14 @@ def goruntu_dondurme_isle(request):
             aci = float(data['aci'])
             interpolasyon = data['interpolasyon']
             boyut_koru = data['boyutKoru']
+            
+            # İnterpolasyon yöntemini dönüştür
+            interpolasyon_map = {
+                'en_yakin': 'nearest',
+                'bilineer': 'bilinear',
+                'bikubik': 'bicubic'
+            }
+            interpolasyon = interpolasyon_map.get(interpolasyon, 'bilinear')
             
             # Görüntüyü döndür
             donmus_goruntu = goruntu_dondur(image_array, aci, interpolasyon, boyut_koru)
@@ -166,6 +204,9 @@ def goruntu_dondurme_isle(request):
             })
             
         except Exception as e:
+            print(f"Hata oluştu: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return JsonResponse({
                 'success': False,
                 'error': str(e)
@@ -220,76 +261,142 @@ def goruntu_kirpma(request):
 
 @csrf_exempt
 def yakinlastirma_isle(request):
-    if request.method == 'POST':
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Sadece POST istekleri kabul edilir'})
+    
+    try:
+        # Görüntü kontrolü
+        if 'image' not in request.FILES:
+            return JsonResponse({'success': False, 'error': 'Lütfen bir görüntü yükleyin'})
+        
+        # Parametreleri al ve doğrula
         try:
-            # Görüntü kontrolü
-            image = request.FILES.get('image')
-            if not image:
-                return JsonResponse({'error': 'Lütfen bir görüntü yükleyin'}, status=400)
-            
-            # Dosya boyutu kontrolü (max 10MB)
-            if image.size > 10 * 1024 * 1024:
-                return JsonResponse({'error': 'Görüntü boyutu 10MB\'dan küçük olmalıdır'}, status=400)
+            olcek_faktoru = float(request.POST.get('olcek_faktoru', 1.0))
+            if not (0.1 <= olcek_faktoru <= 5.0):
+                return JsonResponse({'success': False, 'error': 'Ölçek faktörü 0.1 ile 5.0 arasında olmalıdır'})
+        except ValueError:
+            return JsonResponse({'success': False, 'error': 'Geçersiz ölçek faktörü'})
 
-            # Parametreleri al ve doğrula
-            try:
-                olcek_faktoru = float(request.POST.get('olcek_faktoru', 1.0))
-                if not (0.1 <= olcek_faktoru <= 5.0):
-                    return JsonResponse({'error': 'Ölçek faktörü 0.1 ile 5.0 arasında olmalıdır'}, status=400)
-            except ValueError:
-                return JsonResponse({'error': 'Geçersiz ölçek faktörü'}, status=400)
+        interpolasyon = request.POST.get('interpolasyon', 'linear')
+        if interpolasyon not in ['nearest', 'linear', 'cubic', 'lanczos']:
+            return JsonResponse({'success': False, 'error': 'Geçersiz interpolasyon yöntemi'})
 
-            interpolasyon = request.POST.get('interpolasyon', 'linear')
-            if interpolasyon not in ['nearest', 'linear', 'cubic', 'lanczos']:
-                return JsonResponse({'error': 'Geçersiz interpolasyon yöntemi'}, status=400)
+        anti_aliasing = request.POST.get('antiAliasing', 'true').lower() == 'true'
 
-            anti_aliasing = request.POST.get('antiAliasing', 'true').lower() == 'true'
+        # Debug için parametre değerlerini yazdır
+        print(f"Ölçekleme parametreleri:")
+        print(f"Ölçek faktörü: {olcek_faktoru}")
+        print(f"İnterpolasyon: {interpolasyon}")
+        print(f"Anti-aliasing: {anti_aliasing}")
 
-            # Görüntüyü numpy dizisine çevir
-            img_array = read_image_file(image)
-            if img_array is None:
-                return JsonResponse({'error': 'Görüntü formatı desteklenmiyor'}, status=400)
+        # Görüntüyü numpy dizisine çevir
+        image = read_image_file(request.FILES['image'])
+        if image is None:
+            return JsonResponse({'success': False, 'error': 'Görüntü formatı desteklenmiyor'})
 
-            # Debug için parametre değerlerini yazdır
-            print(f"Ölçekleme parametreleri: faktör={olcek_faktoru}, interpolasyon={interpolasyon}, anti_aliasing={anti_aliasing}")
+        # Görüntüyü ölçekle
+        processed_image = goruntu_olcekle(
+            image=image,
+            olcek_faktoru=olcek_faktoru,
+            interpolasyon=interpolasyon,
+            anti_aliasing=anti_aliasing
+        )
 
-            # Görüntüyü ölçekle
-            yeni_img = goruntu_olcekle(
-                image=img_array,
-                olcek_faktoru=olcek_faktoru,
-                interpolasyon=interpolasyon,
-                anti_aliasing=anti_aliasing
-            )
+        # Sonucu base64'e dönüştür
+        result_image = Image.fromarray(processed_image)
+        buffer = BytesIO()
+        result_image.save(buffer, format='PNG')
+        base64_image = base64.b64encode(buffer.getvalue()).decode('utf-8')
 
-            # Belleği temizle
-            del img_array
+        return JsonResponse({
+            'success': True,
+            'image': f'data:image/png;base64,{base64_image}'
+        })
 
-            # Sonuç görüntüsünü base64'e çevir
-            processed_image = encode_image_base64(yeni_img)
-            del yeni_img
-
-            return JsonResponse({
-                'success': True,
-                'processed_image': processed_image,
-                'parameters': {
-                    'olcek_faktoru': olcek_faktoru,
-                    'interpolasyon': interpolasyon,
-                    'anti_aliasing': anti_aliasing
-                }
-            })
-
-        except MemoryError:
-            return JsonResponse({'error': 'Görüntü işlenirken bellek yetersiz kaldı'}, status=500)
-        except Exception as e:
-            return JsonResponse({'error': f'İşlem sırasında bir hata oluştu: {str(e)}'}, status=500)
-
-    return JsonResponse({'error': 'Geçersiz istek yöntemi'}, status=405)
+    except Exception as e:
+        print(f"Hata oluştu: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'error': str(e)})
 
 def yakinlastirma(request):
     return render(request, 'core/islemler/yakinlastirma.html')
 
 def histogram(request):
+    """Histogram sayfasını render eden view"""
     return render(request, 'core/islemler/histogram.html')
+
+@csrf_exempt
+def histogram_isle_view(request):
+    """Histogram işlemlerini gerçekleştiren view"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Sadece POST istekleri kabul edilir'}, status=405)
+    
+    try:
+        print("Histogram işlemi başlatıldı")
+        print("POST data:", request.POST)
+        print("FILES:", request.FILES)
+        
+        # Görüntü kontrolü
+        if 'image' not in request.FILES:
+            return JsonResponse({'error': 'Görüntü dosyası gerekli'}, status=400)
+        
+        # Parametreleri al
+        islem_turu = request.POST.get('islemTuru', 'esitleme')
+        kanal_bazli = request.POST.get('kanalBazli', 'false').lower() == 'true'
+        
+        # Germe işlemi için parametreleri al
+        min_deger = int(request.POST.get('minDeger', 0))
+        max_deger = int(request.POST.get('maxDeger', 255))
+        
+        print(f"İşlem parametreleri: islem_turu={islem_turu}, kanal_bazli={kanal_bazli}")
+        print(f"Germe parametreleri: min_deger={min_deger}, max_deger={max_deger}")
+        
+        # Görüntüyü numpy dizisine çevir
+        img_array = read_image_file(request.FILES['image'])
+        if img_array is None:
+            return JsonResponse({'error': 'Görüntü formatı desteklenmiyor'}, status=400)
+        
+        print(f"Görüntü boyutu: {img_array.shape}")
+        
+        # Orijinal görüntünün histogramını hesapla
+        orijinal_hist = histogram_hesapla(img_array)
+        orijinal_hist_goruntu = histogram_grafigi_olustur(orijinal_hist)
+        
+        # Histogram işlemini uygula
+        islenmiş_goruntu = histogram_isle(
+            image=img_array,
+            islem_turu=islem_turu,
+            min_deger=min_deger,
+            max_deger=max_deger,
+            kanal_bazli=kanal_bazli
+        )
+        
+        print("İşlem tamamlandı, sonuç boyutu:", islenmiş_goruntu.shape)
+        
+        # İşlenmiş görüntünün histogramını hesapla
+        islenmiş_hist = histogram_hesapla(islenmiş_goruntu)
+        islenmiş_hist_goruntu = histogram_grafigi_olustur(islenmiş_hist)
+        
+        # Görüntüleri base64'e çevir
+        orijinal_hist_base64 = encode_image_base64(orijinal_hist_goruntu)
+        islenmiş_hist_base64 = encode_image_base64(islenmiş_hist_goruntu)
+        islenmiş_goruntu_base64 = encode_image_base64(islenmiş_goruntu)
+        
+        return JsonResponse({
+            'success': True,
+            'processed_image': islenmiş_goruntu_base64,
+            'original_histogram': orijinal_hist_base64,
+            'processed_histogram': islenmiş_hist_base64
+        })
+        
+    except Exception as e:
+        print(f"Hata oluştu: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'error': f'İşlem sırasında bir hata oluştu: {str(e)}'
+        }, status=500)
 
 @csrf_exempt
 def kontrast_isle_view(request):
@@ -421,72 +528,6 @@ def goruntu_dondurme(request):
     return render(request, 'core/islemler/goruntu_dondurme.html')
 
 @csrf_exempt
-def histogram_isle_view(request):
-    if request.method == 'POST':
-        try:
-            # Görüntü kontrolü
-            image = request.FILES.get('image')
-            if not image:
-                return JsonResponse({'error': 'Lütfen bir görüntü yükleyin'}, status=400)
-            
-            # Parametreleri al
-            islem_turu = request.POST.get('islemTuru', 'esitleme')
-            kanal_bazli = request.POST.get('kanalBazli', 'false').lower() == 'true'
-            
-            # Germe işlemi için parametreleri al
-            min_deger = int(request.POST.get('minDeger', 0))
-            max_deger = int(request.POST.get('maxDeger', 255))
-            
-            # Görüntüyü numpy dizisine çevir
-            img_array = read_image_file(image)
-            if img_array is None:
-                return JsonResponse({'error': 'Görüntü formatı desteklenmiyor'}, status=400)
-            
-            # Debug için parametre değerlerini yazdır
-            print(f"Histogram işlemi parametreleri:")
-            print(f"İşlem türü: {islem_turu}")
-            print(f"Kanal bazlı: {kanal_bazli}")
-            print(f"Min değer: {min_deger}")
-            print(f"Max değer: {max_deger}")
-            
-            # Orijinal görüntünün histogramını hesapla
-            orijinal_hist = histogram_hesapla(img_array)
-            orijinal_hist_goruntu = histogram_grafigi_olustur(orijinal_hist)
-            
-            # Histogram işlemini uygula
-            islenmiş_goruntu = histogram_isle(
-                image=img_array,
-                islem_turu=islem_turu,
-                min_deger=min_deger,
-                max_deger=max_deger,
-                kanal_bazli=kanal_bazli
-            )
-            
-            # İşlenmiş görüntünün histogramını hesapla
-            islenmiş_hist = histogram_hesapla(islenmiş_goruntu)
-            islenmiş_hist_goruntu = histogram_grafigi_olustur(islenmiş_hist)
-            
-            # Görüntüleri base64'e çevir
-            orijinal_hist_base64 = encode_image_base64(orijinal_hist_goruntu)
-            islenmiş_hist_base64 = encode_image_base64(islenmiş_hist_goruntu)
-            islenmiş_goruntu_base64 = encode_image_base64(islenmiş_goruntu)
-            
-            return JsonResponse({
-                'success': True,
-                'processed_image': islenmiş_goruntu_base64,
-                'original_histogram': orijinal_hist_base64,
-                'processed_histogram': islenmiş_hist_base64
-            })
-            
-        except Exception as e:
-            print(f"Hata oluştu: {str(e)}")  # Hatayı sunucu konsoluna yazdır
-            return JsonResponse({
-                'error': f'İşlem sırasında bir hata oluştu: {str(e)}'
-            }, status=500)
-    
-    return JsonResponse({'error': 'Geçersiz istek yöntemi'}, status=405)
-
-@csrf_exempt
 def gurultu_isle(request):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Sadece POST istekleri kabul edilir.'})
@@ -500,6 +541,10 @@ def gurultu_isle(request):
         # Parametreleri al
         islem_turu = request.POST.get('islem_turu')
         
+        # Debug için parametreleri yazdır
+        print(f"Gürültü işlemi parametreleri:")
+        print(f"İşlem türü: {islem_turu}")
+        
         # Görüntüyü numpy dizisine çevir
         img = Image.open(image_file)
         if img.mode in ['RGBA', 'LA']:
@@ -511,16 +556,19 @@ def gurultu_isle(request):
             img = img.convert('RGB')
         
         image_array = np.array(img)
+        print(f"Görüntü boyutu: {image_array.shape}")
         
         # Gürültü işleme modülünü import et
-        from .image_processing.noise import gurultu_isle
+        from .image_processing.noise import gurultu_isle as noise_process
         
         if islem_turu == 'ekle':
             gurultu_turu = request.POST.get('gurultu_turu')
             yogunluk = float(request.POST.get('yogunluk', '10'))
             
+            print(f"Gürültü ekleme: tür={gurultu_turu}, yoğunluk={yogunluk}")
+            
             # Gürültü ekleme işlemi
-            processed_image = gurultu_isle(
+            processed_image = noise_process(
                 image=image_array,
                 islem_turu='ekle',
                 gurultu_turu=gurultu_turu,
@@ -531,27 +579,33 @@ def gurultu_isle(request):
             filtre_turu = request.POST.get('filtre_turu')
             filtre_boyutu = int(request.POST.get('filtre_boyutu', '3'))
             
+            print(f"Gürültü temizleme: filtre={filtre_turu}, boyut={filtre_boyutu}")
+            
             # Gürültü temizleme işlemi
-            processed_image = gurultu_isle(
+            processed_image = noise_process(
                 image=image_array,
                 islem_turu='temizle',
                 filtre_turu=filtre_turu,
                 filtre_boyutu=filtre_boyutu
             )
         
+        print(f"İşlenmiş görüntü boyutu: {processed_image.shape}")
+        
         # İşlenmiş görüntüyü base64'e çevir
         img = Image.fromarray(processed_image.astype('uint8'))
         buffer = io.BytesIO()
         img.save(buffer, format='PNG')
-        img_str = base64.b64encode(buffer.getvalue()).decode('utf-8')
+        img_str = 'data:image/png;base64,' + base64.b64encode(buffer.getvalue()).decode('utf-8')
         
         return JsonResponse({
             'success': True,
-            'processed_image': img_str
+            'image': img_str
         })
         
     except Exception as e:
         print(f"Hata: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return JsonResponse({
             'success': False,
             'error': str(e)

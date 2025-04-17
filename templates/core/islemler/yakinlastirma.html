@@ -1,151 +1,106 @@
 {% extends 'core/islemler/islem_base.html' %}
 {% load static %}
 
-{% block title %}Yakınlaştırma/Uzaklaştırma{% endblock %}
+{% block title %}Görüntü Yakınlaştırma - Görüntü İşleme{% endblock %}
 
-{% block islem_title %}Yakınlaştırma/Uzaklaştırma{% endblock %}
+{% block islem_title %}Görüntü Yakınlaştırma{% endblock %}
 
 {% block islem_parametreleri %}
 <div class="mb-3">
-    <label for="olcek_faktoru" class="form-label">Ölçek Faktörü: <span id="olcek_faktoru_deger">1.0</span>x</label>
-    <input type="range" class="form-range" id="olcek_faktoru" min="0.1" max="5.0" step="0.1" value="1.0">
-    <small class="form-text text-muted">0.1x (küçültme) ile 5.0x (büyütme) arasında bir değer seçin</small>
+    <label class="form-label">Ölçek Faktörü</label>
+    <div class="d-flex align-items-center gap-3">
+        <input type="range" class="form-range flex-grow-1" id="olcekFaktoru" min="0.1" max="5" value="1" step="0.1">
+        <span id="olcekDegeriText" class="badge bg-primary">1.0x</span>
+    </div>
 </div>
 
 <div class="mb-3">
-    <label for="interpolasyon" class="form-label">İnterpolasyon Yöntemi:</label>
-    <select class="form-select" id="interpolasyon">
+    <label class="form-label">İnterpolasyon Yöntemi</label>
+    <select class="form-select" id="interpolasyonYontemi">
         <option value="nearest">En Yakın Komşu</option>
-        <option value="linear" selected>Bilineer</option>
+        <option value="linear">Bilineer</option>
         <option value="cubic">Bikübik</option>
         <option value="lanczos">Lanczos</option>
     </select>
 </div>
 
-<div class="mb-3 form-check">
-    <input type="checkbox" class="form-check-input" id="antiAliasing" checked>
-    <label class="form-check-label" for="antiAliasing">Anti-aliasing (Küçültme işleminde)</label>
+<div class="mb-3">
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="antiAliasing" checked>
+        <label class="form-check-label" for="antiAliasing">
+            Anti-aliasing Uygula
+        </label>
+    </div>
 </div>
 {% endblock %}
 
-{% block islem_js %}
-document.addEventListener('DOMContentLoaded', function() {
-    // Elementleri seç
-    const olcekFaktoru = document.getElementById('olcek_faktoru');
-    const olcekFaktoruDeger = document.getElementById('olcek_faktoru_deger');
-    const processButton = document.getElementById('processButton');
-    const originalImageArea = document.querySelector('.original-image-area');
-    const processedImageArea = document.querySelector('.processed-image-area');
-    const processedPlaceholder = document.getElementById('processedPlaceholder');
-    const processedImage = document.getElementById('processedImage');
-    const imageInput = document.getElementById('imageInput'); // Tek bir yerde tanımla
+{% block extra_js %}
+{{ block.super }}
 
-    // Ölçek faktörü değerini güncelle
-    olcekFaktoru.addEventListener('input', function() {
-        olcekFaktoruDeger.textContent = this.value + 'x';
-    });
-
-    // Görüntü yüklendiğinde
-    imageInput.addEventListener('change', function(e) {
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
-            const reader = new FileReader();
-            
-            reader.onload = function(e) {
-                // Orijinal görüntüyü göster
-                const img = document.createElement('img');
-                img.src = e.target.result;
-                img.className = 'img-fluid';
-                img.alt = 'Orijinal Görüntü';
-                originalImageArea.innerHTML = '';
-                originalImageArea.appendChild(img);
-                processButton.disabled = false;
-            }
-            
-            reader.readAsDataURL(file);
-        }
-    });
-
-    // İşlem başlatma butonu tıklandığında
-    processButton.addEventListener('click', async function() {
-        if (!imageInput.files[0]) {
-            alert('Lütfen bir görüntü seçin');
-            return;
-        }
-
-        // İşlem başladığında butonu devre dışı bırak
-        processButton.disabled = true;
-        processButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> İşleniyor...';
-        
-        // İşlenmiş görüntü placeholder'ını gizle
-        processedPlaceholder.style.display = 'none';
-        processedImage.style.display = 'none';
-        
-        try {
-            const formData = new FormData();
-            formData.append('image', imageInput.files[0]);
-            
-            // Ölçek faktörünü doğru formatta gönder
-            const olcekDegeri = parseFloat(olcekFaktoru.value);
-            if (isNaN(olcekDegeri) || olcekDegeri <= 0 || olcekDegeri > 5.0) {
-                throw new Error('Geçersiz ölçek faktörü: 0.1 ile 5.0 arasında bir değer olmalı');
-            }
-            formData.append('olcek_faktoru', olcekDegeri);
-            
-            formData.append('interpolasyon', document.getElementById('interpolasyon').value);
-            formData.append('antiAliasing', document.getElementById('antiAliasing').checked);
-
-            console.log('Gönderilen parametreler:', {
-                olcek_faktoru: olcekDegeri,
-                interpolasyon: document.getElementById('interpolasyon').value,
-                antiAliasing: document.getElementById('antiAliasing').checked
-            });
-
-            const response = await fetch('/yakinlastirma/isle/', {
-                method: 'POST',
-                body: formData
-            });
-
-            const data = await response.json();
-            console.log('Sunucu yanıtı:', data);
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Sunucu hatası oluştu');
-            }
-
-            if (data.success) {
-                // İşlenmiş görüntüyü göster
-                processedImage.src = data.processed_image;
-                processedImage.style.display = 'block';
-                processedPlaceholder.style.display = 'none';
-                
-                // Görüntü yüklendiğinde boyutları güncelle
-                processedImage.onload = function() {
-                    const originalImg = originalImageArea.querySelector('img');
-                    if (originalImg) {
-                        console.log('Orijinal boyutlar:', {
-                            width: originalImg.naturalWidth,
-                            height: originalImg.naturalHeight
-                        });
-                        console.log('İşlenmiş boyutlar:', {
-                            width: processedImage.naturalWidth,
-                            height: processedImage.naturalHeight
-                        });
-                    }
-                };
-            } else {
-                throw new Error(data.error || 'İşlem başarısız oldu');
-            }
-        } catch (error) {
-            console.error('Hata:', error);
-            alert('Hata: ' + error.message);
-            processedPlaceholder.style.display = 'block';
-            processedImage.style.display = 'none';
-        } finally {
-            // İşlem bittiğinde butonu tekrar aktif et
-            processButton.disabled = false;
-            processButton.innerHTML = '<i class="bi bi-play-circle me-2"></i>İşlemi Başlat';
-        }
-    });
+<script>
+// Ölçek değeri değiştiğinde göstergeyi güncelle
+document.getElementById('olcekFaktoru').addEventListener('input', function() {
+    document.getElementById('olcekDegeriText').textContent = this.value + 'x';
 });
+
+// İşlem butonuna tıklandığında
+processButton.addEventListener('click', async function() {
+    if (!imageInput.files[0]) {
+        alert('Lütfen bir görüntü seçin');
+        return;
+    }
+
+    // İşlem başladığında butonu devre dışı bırak
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>İşlem Yapılıyor...';
+
+    try {
+        // Form verilerini hazırla
+        const formData = new FormData();
+        formData.append('image', imageInput.files[0]);
+        formData.append('olcek_faktoru', document.getElementById('olcekFaktoru').value);
+        formData.append('interpolasyon', document.getElementById('interpolasyonYontemi').value);
+        formData.append('antiAliasing', document.getElementById('antiAliasing').checked);
+        
+        // CSRF token al
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        // İşlemi başlat
+        const response = await fetch('/yakinlastirma/isle/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            body: formData
+        });
+
+        if (!response.ok) {
+            const errorData = await response.text();
+            throw new Error(errorData || 'İşlem sırasında bir hata oluştu');
+        }
+
+        const responseData = await response.json();
+
+        if (!responseData.success) {
+            throw new Error(responseData.error || 'İşlem başarısız oldu');
+        }
+
+        // İşlenmiş görüntüyü göster
+        processedImage.src = responseData.image;
+        processedImage.style.display = 'block';
+        processedPlaceholder.style.display = 'none';
+
+        // İşlem başarılı olduğunda butonu tekrar aktif et
+        processButton.disabled = false;
+        processButton.innerHTML = '<i class="bi bi-play-circle me-2"></i>İşlemi Başlat';
+
+    } catch (error) {
+        console.error('Hata:', error);
+        alert('Hata: ' + error.message);
+        // Hata durumunda butonu tekrar aktif et
+        this.disabled = false;
+        this.innerHTML = '<i class="bi bi-play-circle me-2"></i>İşlemi Başlat';
+    }
+});
+</script>
 {% endblock %} 

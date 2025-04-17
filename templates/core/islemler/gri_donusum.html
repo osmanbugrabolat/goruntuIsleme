@@ -15,62 +15,59 @@
 </div>
 {% endblock %}
 
-{% block islem_js %}
-document.getElementById('processButton').addEventListener('click', async function() {
-    const imageInput = document.getElementById('imageInput');
-    const donusumSelect = document.getElementById('donusumYontemi');
-    const originalImageArea = document.querySelector('.original-image-area');
-    const processedImageArea = document.querySelector('.processed-image-area');
-    
-    if (!imageInput.files || !imageInput.files[0]) {
+{% block extra_js %}
+{{ block.super }}
+
+<script>
+// İşlem butonuna tıklandığında
+processButton.addEventListener('click', async function() {
+    if (!imageInput.files[0]) {
         alert('Lütfen bir görüntü seçin');
         return;
     }
 
-    if (!donusumSelect) {
-        alert('Dönüşüm yöntemi seçimi bulunamadı');
-        return;
-    }
+    // İşlem başladığında butonları devre dışı bırak
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> İşleniyor...';
 
-    // Form verilerini hazırla
-    const formData = new FormData();
-    formData.append('image', imageInput.files[0]);
-    formData.append('method', donusumSelect.value);
-    
     try {
-        // Yükleniyor durumunu göster
-        processedImageArea.innerHTML = '<div class="d-flex justify-content-center align-items-center h-100"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Yükleniyor...</span></div></div>';
+        // Form verilerini hazırla
+        const formData = new FormData();
+        formData.append('image', imageInput.files[0]);
+        formData.append('method', document.getElementById('donusumYontemi').value);
         
         // CSRF token al
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
         
-        // AJAX isteği gönder
-        const response = await fetch(window.location.href, {
+        // İşlemi başlat
+        const response = await fetch('/gri-donusum/isle/', {
             method: 'POST',
-            body: formData,
             headers: {
-                'X-CSRFToken': csrfToken
-            }
+                'X-CSRFToken': csrftoken
+            },
+            body: formData
         });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            // İşlenmiş görüntüyü göster
-            processedImageArea.innerHTML = `<img src="${data.processed_image}" class="img-fluid" alt="İşlenmiş Görüntü">`;
-            
-            // Orijinal görüntüyü göster
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                originalImageArea.innerHTML = `<img src="${e.target.result}" class="img-fluid" alt="Orijinal Görüntü">`;
-            }
-            reader.readAsDataURL(imageInput.files[0]);
-        } else {
-            throw new Error(data.error || 'Görüntü işlenirken bir hata oluştu');
+
+        if (!response.ok) {
+            const errorData = await response.text();
+            throw new Error(errorData || 'İşlem sırasında bir hata oluştu');
         }
+
+        const data = await response.json();
+
+        // İşlenmiş görüntüyü göster
+        processedImage.src = data.image;
+        processedImage.style.display = 'block';
+        processedPlaceholder.style.display = 'none';
+
     } catch (error) {
-        // Hata mesajını göster
-        processedImageArea.innerHTML = `<div class="alert alert-danger" role="alert">${error.message}</div>`;
+        console.error('Hata:', error);
+        alert('Hata: ' + error.message);
+    } finally {
+        // İşlem bittiğinde butonları tekrar aktif et
+        this.disabled = false;
+        this.innerHTML = '<i class="bi bi-play-circle me-2"></i>İşlemi Başlat';
     }
 });
+</script>
 {% endblock %} 
